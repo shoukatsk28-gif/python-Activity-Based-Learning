@@ -1,70 +1,74 @@
-# Case Study 6: Nested Loop Calendar Generator
-*(Original list number: 37)*
+# Case Study 7: Student Marks Matrix Analysis
+*(Original list number: 42)*
 
 ## 1. Problem Statement
-Print a formatted monthly calendar from the starting weekday and number of days of the month. Dates must be aligned under the weekday headings, with blank cells before the first date and after the last date.
+Marks of several students in several subjects are stored in a matrix (nested list). Calculate row-wise totals and averages, column-wise statistics, identify the top performer(s), detect low-average subjects, list subject failures and rank the students.
 
 ## 2. Objectives
-- Use nested loops (weeks and columns) to build a table-like output.
-- Validate month length and weekday number.
-- Align one-digit and two-digit dates in fixed-width cells.
-- Handle months of 28, 29, 30 and 31 days.
+- Represent a table as a nested list and access marks[row][col].
+- Calculate row-wise and column-wise statistics using nested loops.
+- Find highest and lowest marks with the student names.
+- Handle ties for the top performer.
+- Rank students using bubble sort on an index list.
 
 ## 3. Assumptions
-- Number of days must be 28 to 31.
-- Starting weekday is a number: 1 = Monday ... 7 = Sunday.
-- The week starts on Monday.
-- A month needs at most 6 week-rows.
-- The month name is only used as a title.
+- 6 students and 4 subjects, marks out of 100.
+- Pass mark in each subject = 35.
+- A subject whose class average is below 60 is a low-average subject.
+- Names and subjects are stored in separate lists with the same order as the matrix.
 
 ## 4. Algorithm
-1. Start; read days and keep asking until 28 <= days <= 31.
-2. Read starting weekday until 1 to 7; read month name.
-3. Print the title and heading Mo Tu We Th Fr Sa Su.
-4. Set day = 1.
-5. For each week (maximum 6): stop if day > days.
-6. For columns 1 to 7: print blank if (first week and column < start) or day > days, else print day with width 3 and increase day.
-7. Print the line; stop after the last week.
+1. Start; create names, subjects and the marks matrix.
+2. For each row, add the marks to get the total and compute the average.
+3. Print the marks table with totals and averages.
+4. For each column, compute average, highest (with name) and lowest (with name).
+5. If the column average < 60, add the subject to the weak list.
+6. Find the largest total and list every student who has it.
+7. For each student, list subjects with marks below 35.
+8. Create an index list and bubble sort it by total (descending).
+9. Print the rank list; stop.
 
 ## 5. Pseudocode
 ```text
 START
-  REPEAT READ days UNTIL 28 <= days <= 31
-  REPEAT READ start UNTIL 1 <= start <= 7
-  READ month_name
-  PRINT month_name and heading "Mo Tu We Th Fr Sa Su"
-  day <- 1
-  FOR week FROM 0 TO 5
-      IF day > days THEN BREAK
-      line <- ""
-      FOR column FROM 1 TO 7
-          IF (week = 0 AND column < start) OR day > days
-              THEN line <- line + 3 spaces
-          ELSE
-              line <- line + day padded to width 3
-              day <- day + 1
-      PRINT line
-  ENDFOR
+  names, subjects, marks (nested list)
+  FOR each row r
+      totals[r] <- sum of marks[r][c] over all c
+      averages[r] <- totals[r] / number of subjects
+  PRINT table
+  FOR each column c
+      sum, highest, lowest, and who has them <- scan all rows
+      avg <- sum / number of students
+      PRINT statistics
+      IF avg < LOW_AVERAGE THEN add subject to weak list
+  best <- maximum of totals
+  PRINT every student whose total = best
+  PRINT weak subjects
+  FOR each row r
+      collect subjects where marks[r][c] < PASS_MARK
+      IF any THEN PRINT student and subjects
+  order <- [0,1,2,...]
+  BUBBLE SORT order by totals (high to low)
+  PRINT rank list
 END
 ```
 
 ## 6. Flowchart
 ```mermaid
 flowchart TD
-    A([Start]) --> B[Read days, validate 28 to 31]
-    B --> C[Read start weekday, validate 1 to 7]
-    C --> D[Print title and weekday heading]
-    D --> E[day = 1, week = 0]
-    E --> F{week < 6 and day <= days?}
-    F -- No --> Z([Stop])
-    F -- Yes --> G[column = 1]
-    G --> H{column <= 7?}
-    H -- No --> L[Print line, week = week + 1] --> F
-    H -- Yes --> I{Blank cell?}
-    I -- Yes --> J[Add 3 spaces]
-    I -- No --> K[Add day, day = day + 1]
-    J --> M[column = column + 1] --> H
-    K --> M
+    A([Start]) --> B[Create names, subjects, marks matrix]
+    B --> C[Row loop: totals and averages]
+    C --> D[Print marks table]
+    D --> E[Column loop: average, highest, lowest]
+    E --> F{Average below 60?}
+    F -- Yes --> G[Add to weak subjects]
+    F -- No --> H[Next column]
+    G --> H
+    H --> I[Find top performer or performers]
+    I --> J[Find students failing any subject]
+    J --> K[Bubble sort index list by total]
+    K --> L[Print rank list]
+    L --> M([Stop])
 ```
 
 ## 7. Python Source Code
@@ -72,59 +76,125 @@ The full program is in [`program.py`](program.py).
 
 ```python
 # ============================================================
-# Case Study 6: Nested Loop Calendar Generator
-# Uses: nested loops, strings, validation, conditions
+# Case Study 7: Student Marks Matrix Analysis
+# Uses: nested lists, nested loops, row/column statistics
 # ============================================================
 
-# ---- Input with validation ----
-while True:
-    t = input("Number of days in the month (28-31): ").strip()
-    if t.isdigit() and 28 <= int(t) <= 31:
-        days = int(t)
-        break
-    print("Invalid! A month has 28, 29, 30 or 31 days.")
+names = ["Anil", "Bhavya", "Chitra", "Deepak", "Eshwar", "Fatima"]
+subjects = ["Maths", "Physics", "Chemistry", "Python"]
+marks = [                       # nested list: one row per student
+    [78, 82, 59, 91],
+    [92, 88, 95, 97],
+    [45, 38, 52, 60],
+    [30, 42, 38, 55],
+    [66, 71, 48, 80],
+    [55, 49, 40, 72],
+]
+PASS_MARK = 35          # below this in any subject = fail in that subject
+LOW_AVERAGE = 60        # subject average below this is flagged as weak
 
-while True:
-    t = input("Starting weekday (1=Mon, 2=Tue, ... 7=Sun): ").strip()
-    if t.isdigit() and 1 <= int(t) <= 7:
-        start = int(t)
-        break
-    print("Invalid! Enter a number from 1 to 7.")
+rows = len(marks)
+cols = len(subjects)
 
-month_name = input("Month name (for the title): ").strip()
+# ---- Row-wise statistics ----
+totals = []
+averages = []
+for r in range(rows):
+    t = 0
+    for c in range(cols):
+        t = t + marks[r][c]
+    totals.append(t)
+    averages.append(t / cols)
 
-# ---- Print the calendar ----
-print()
-print("      " + month_name)
-print("Mo Tu We Th Fr Sa Su")
+# ---- Print the marks table ----
+print("MARKS TABLE")
+header = "Name".ljust(8)
+for s in subjects:
+    header = header + s.ljust(11)
+print(header + "Total  Average")
+for r in range(rows):
+    line = names[r].ljust(8)
+    for c in range(cols):
+        line = line + str(marks[r][c]).ljust(11)
+    print(line + str(totals[r]).ljust(7) + str(round(averages[r], 2)))
 
-day = 1                                  # next date to print
-for week in range(6):                    # a month needs at most 6 week-rows
-    if day > days:
-        break                            # all dates printed, stop early
-    line = ""
-    for column in range(1, 8):           # columns 1 (Mon) .. 7 (Sun)
-        if week == 0 and column < start:
-            line = line + "   "          # blank cell before the 1st
-        elif day > days:
-            line = line + "   "          # blank cell after the last date
-        else:
-            if day < 10:
-                line = line + " " + str(day) + " "    # width = 3 characters
-            else:
-                line = line + str(day) + " "
-            day = day + 1
-    print(line)
+# ---- Column-wise statistics ----
+print("\nSUBJECT STATISTICS")
+weak_subjects = []
+for c in range(cols):
+    col_total = 0
+    highest = marks[0][c]
+    lowest = marks[0][c]
+    high_name = names[0]
+    low_name = names[0]
+    for r in range(rows):
+        value = marks[r][c]
+        col_total = col_total + value
+        if value > highest:
+            highest = value
+            high_name = names[r]
+        if value < lowest:
+            lowest = value
+            low_name = names[r]
+    avg = col_total / rows
+    print(subjects[c].ljust(10), "average", str(round(avg, 2)).ljust(6),
+          "highest", highest, "(" + high_name + ")",
+          "lowest", lowest, "(" + low_name + ")")
+    if avg < LOW_AVERAGE:
+        weak_subjects.append(subjects[c])
+
+# ---- Top performer(s): handles ties ----
+best = totals[0]
+for t in totals:
+    if t > best:
+        best = t
+top = []
+for r in range(rows):
+    if totals[r] == best:
+        top.append(names[r])
+print("\nTOP PERFORMER(S):", ", ".join(top), "with total", best)
+
+# ---- Weak subjects ----
+if len(weak_subjects) == 0:
+    print("No subject has an average below", LOW_AVERAGE)
+else:
+    print("LOW-AVERAGE SUBJECT(S) (below " + str(LOW_AVERAGE) + "):", ", ".join(weak_subjects))
+
+# ---- Students failing any subject ----
+print("\nSUBJECT FAILURES (below " + str(PASS_MARK) + ")")
+anyone = False
+for r in range(rows):
+    failed = []
+    for c in range(cols):
+        if marks[r][c] < PASS_MARK:
+            failed.append(subjects[c])
+    if len(failed) > 0:
+        print(names[r], "failed in", ", ".join(failed))
+        anyone = True
+if not anyone:
+    print("None")
+
+# ---- Rank list (bubble sort on an index list) ----
+order = list(range(rows))
+for i in range(rows - 1):
+    for j in range(rows - 1 - i):
+        if totals[order[j]] < totals[order[j + 1]]:
+            order[j], order[j + 1] = order[j + 1], order[j]
+print("\nRANK LIST")
+for position in range(rows):
+    idx = order[position]
+    print(position + 1, names[idx], totals[idx])
 ```
 
 ## 8. Test Cases
 | No. | Test Case | Input | Expected Output |
 |-----|-----------|-------|-----------------|
-| 1 | 31 days from Wednesday | 31, 3, October | Row 1 has 3 blanks then 1 2 3 4 5; last row 27 to 31 |
-| 2 | 30 days from Sunday | 30, 7, November | 1 appears under Su; 30 alone on the 6th row |
-| 3 | Invalid days | 35, then 30 | Error message, asks again |
-| 4 | Invalid weekday | 9, 0, then 7 | Error message twice, then accepted |
-| 5 | February (28 days, Monday start) | 28, 1, February | Exactly 4 full rows |
+| 1 | Totals | Built-in matrix | Anil 310, Bhavya 372, Chitra 195, Deepak 165, Eshwar 265, Fatima 216 |
+| 2 | Top performer | Built-in | Bhavya with total 372 |
+| 3 | Subject averages | Built-in | Maths 61.0, Physics 61.67, Chemistry 55.33, Python 75.83 |
+| 4 | Low-average subject | Threshold 60 | Chemistry flagged |
+| 5 | Failures | Pass mark 35 | Deepak failed in Maths (30) |
+| 6 | Rank order | Built-in | Bhavya, Anil, Eshwar, Fatima, Chitra, Deepak |
 
 ## 9. Output Screenshot
 Run `python program.py`, take a screenshot of the terminal and save it as `screenshots/output.png`.
@@ -134,15 +204,35 @@ Run `python program.py`, take a screenshot of the terminal and save it as `scree
 Text copy of the output: [`sample_output.txt`](sample_output.txt)
 
 ```text
-Number of days in the month (28-31): Starting weekday (1=Mon, 2=Tue, ... 7=Sun): Month name (for the title): 
-      October 2026
-Mo Tu We Th Fr Sa Su
-          1  2  3  4 
- 5  6  7  8  9 10 11 
-12 13 14 15 16 17 18 
-19 20 21 22 23 24 25 
-26 27 28 29 30 31    
+MARKS TABLE
+Name    Maths      Physics    Chemistry  Python     Total  Average
+Anil    78         82         59         91         310    77.5
+Bhavya  92         88         95         97         372    93.0
+Chitra  45         38         52         60         195    48.75
+Deepak  30         42         38         55         165    41.25
+Eshwar  66         71         48         80         265    66.25
+Fatima  55         49         40         72         216    54.0
+
+SUBJECT STATISTICS
+Maths      average 61.0   highest 92 (Bhavya) lowest 30 (Deepak)
+Physics    average 61.67  highest 88 (Bhavya) lowest 38 (Chitra)
+Chemistry  average 55.33  highest 95 (Bhavya) lowest 38 (Deepak)
+Python     average 75.83  highest 97 (Bhavya) lowest 55 (Deepak)
+
+TOP PERFORMER(S): Bhavya with total 372
+LOW-AVERAGE SUBJECT(S) (below 60): Chemistry
+
+SUBJECT FAILURES (below 35)
+Deepak failed in Maths
+
+RANK LIST
+1 Bhavya 372
+2 Anil 310
+3 Eshwar 265
+4 Fatima 216
+5 Chitra 195
+6 Deepak 165
 ```
 
 ## 10. Conclusion
-The program prints a neatly aligned calendar using two nested loops and fixed-width cells. Validation guarantees that only realistic month lengths and weekdays are accepted. (Tip: October 2026 starts on Thursday, so use weekday 4.)
+Nested lists made it easy to compute both row-wise and column-wise statistics with nested loops. The program also shows how an index list can be sorted to rank students without disturbing the original matrix.
