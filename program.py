@@ -1,109 +1,57 @@
 # ============================================================
-# Case Study 7: Student Marks Matrix Analysis
-# Uses: nested lists, nested loops, row/column statistics
+# Case Study 8: Tuple-Based Employee Shift Conflict Detection
+# Uses: tuples, tuple unpacking, lists, nested loops
 # ============================================================
 
-names = ["Anil", "Bhavya", "Chitra", "Deepak", "Eshwar", "Fatima"]
-subjects = ["Maths", "Physics", "Chemistry", "Python"]
-marks = [                       # nested list: one row per student
-    [78, 82, 59, 91],
-    [92, 88, 95, 97],
-    [45, 38, 52, 60],
-    [30, 42, 38, 55],
-    [66, 71, 48, 80],
-    [55, 49, 40, 72],
+# Each shift is a tuple: (employee, day, start_hour, end_hour) in 24-hour time
+shifts = [
+    ("E01", "Mon", 9, 17),
+    ("E02", "Mon", 9, 13),
+    ("E01", "Mon", 16, 20),     # overlaps with E01's first shift
+    ("E03", "Tue", 8, 16),
+    ("E02", "Mon", 12, 18),     # overlaps with E02's first shift
+    ("E03", "Tue", 16, 22),     # touches (not overlaps) E03's first shift
+    ("E04", "Wed", 14, 10),     # invalid: ends before it starts
+    ("E01", "Tue", 9, 17),
+    ("E01", "Tue", 17, 23),     # back-to-back, no conflict
+    ("E05", "Thu", 6, 26),      # invalid: hour above 24
 ]
-PASS_MARK = 35          # below this in any subject = fail in that subject
-LOW_AVERAGE = 60        # subject average below this is flagged as weak
 
-rows = len(marks)
-cols = len(subjects)
+# ---- Step 1: separate valid and invalid shifts ----
+valid_shifts = []
+print("=== VALIDATION ===")
+for shift in shifts:
+    emp, day, start, end = shift                  # unpacking
+    if start < 0 or end > 24 or start >= end:
+        print("INVALID shift:", shift)
+    else:
+        valid_shifts.append(shift)
+print("Valid shifts:", len(valid_shifts), "| Invalid shifts:", len(shifts) - len(valid_shifts))
 
-# ---- Row-wise statistics ----
-totals = []
-averages = []
-for r in range(rows):
-    t = 0
-    for c in range(cols):
-        t = t + marks[r][c]
-    totals.append(t)
-    averages.append(t / cols)
+# ---- Step 2: compare every pair of valid shifts ----
+print("\n=== CONFLICTS ===")
+conflict_employees = []
+conflict_count = 0
+for i in range(len(valid_shifts)):
+    for j in range(i + 1, len(valid_shifts)):
+        e1, d1, s1, f1 = valid_shifts[i]
+        e2, d2, s2, f2 = valid_shifts[j]
+        if e1 == e2 and d1 == d2:                 # same employee, same day
+            if s1 < f2 and s2 < f1:               # interval overlap test
+                latest_start = s1
+                if s2 > s1:
+                    latest_start = s2
+                earliest_end = f1
+                if f2 < f1:
+                    earliest_end = f2
+                overlap = earliest_end - latest_start
+                print(e1, d1, ":", (s1, f1), "overlaps", (s2, f2), "->", overlap, "hour(s)")
+                conflict_count = conflict_count + 1
+                if e1 not in conflict_employees:
+                    conflict_employees.append(e1)
 
-# ---- Print the marks table ----
-print("MARKS TABLE")
-header = "Name".ljust(8)
-for s in subjects:
-    header = header + s.ljust(11)
-print(header + "Total  Average")
-for r in range(rows):
-    line = names[r].ljust(8)
-    for c in range(cols):
-        line = line + str(marks[r][c]).ljust(11)
-    print(line + str(totals[r]).ljust(7) + str(round(averages[r], 2)))
-
-# ---- Column-wise statistics ----
-print("\nSUBJECT STATISTICS")
-weak_subjects = []
-for c in range(cols):
-    col_total = 0
-    highest = marks[0][c]
-    lowest = marks[0][c]
-    high_name = names[0]
-    low_name = names[0]
-    for r in range(rows):
-        value = marks[r][c]
-        col_total = col_total + value
-        if value > highest:
-            highest = value
-            high_name = names[r]
-        if value < lowest:
-            lowest = value
-            low_name = names[r]
-    avg = col_total / rows
-    print(subjects[c].ljust(10), "average", str(round(avg, 2)).ljust(6),
-          "highest", highest, "(" + high_name + ")",
-          "lowest", lowest, "(" + low_name + ")")
-    if avg < LOW_AVERAGE:
-        weak_subjects.append(subjects[c])
-
-# ---- Top performer(s): handles ties ----
-best = totals[0]
-for t in totals:
-    if t > best:
-        best = t
-top = []
-for r in range(rows):
-    if totals[r] == best:
-        top.append(names[r])
-print("\nTOP PERFORMER(S):", ", ".join(top), "with total", best)
-
-# ---- Weak subjects ----
-if len(weak_subjects) == 0:
-    print("No subject has an average below", LOW_AVERAGE)
+if conflict_count == 0:
+    print("No conflicts found.")
 else:
-    print("LOW-AVERAGE SUBJECT(S) (below " + str(LOW_AVERAGE) + "):", ", ".join(weak_subjects))
-
-# ---- Students failing any subject ----
-print("\nSUBJECT FAILURES (below " + str(PASS_MARK) + ")")
-anyone = False
-for r in range(rows):
-    failed = []
-    for c in range(cols):
-        if marks[r][c] < PASS_MARK:
-            failed.append(subjects[c])
-    if len(failed) > 0:
-        print(names[r], "failed in", ", ".join(failed))
-        anyone = True
-if not anyone:
-    print("None")
-
-# ---- Rank list (bubble sort on an index list) ----
-order = list(range(rows))
-for i in range(rows - 1):
-    for j in range(rows - 1 - i):
-        if totals[order[j]] < totals[order[j + 1]]:
-            order[j], order[j + 1] = order[j + 1], order[j]
-print("\nRANK LIST")
-for position in range(rows):
-    idx = order[position]
-    print(position + 1, names[idx], totals[idx])
+    print("\nTotal conflicts:", conflict_count)
+    print("Employees with conflicting schedules:", ", ".join(conflict_employees))

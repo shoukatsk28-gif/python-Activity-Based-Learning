@@ -1,28 +1,11 @@
-MARKS TABLE
-Name    Maths      Physics    Chemistry  Python     Total  Average
-Anil    78         82         59         91         310    77.5
-Bhavya  92         88         95         97         372    93.0
-Chitra  45         38         52         60         195    48.75
-Deepak  30         42         38         55         165    41.25
-Eshwar  66         71         48         80         265    66.25
-Fatima  55         49         40         72         216    54.0
+=== VALIDATION ===
+INVALID shift: ('E04', 'Wed', 14, 10)
+INVALID shift: ('E05', 'Thu', 6, 26)
+Valid shifts: 8 | Invalid shifts: 2
 
-SUBJECT STATISTICS
-Maths      average 61.0   highest 92 (Bhavya) lowest 30 (Deepak)
-Physics    average 61.67  highest 88 (Bhavya) lowest 38 (Chitra)
-Chemistry  average 55.33  highest 95 (Bhavya) lowest 38 (Deepak)
-Python     average 75.83  highest 97 (Bhavya) lowest 55 (Deepak)
+=== CONFLICTS ===
+E01 Mon : (9, 17) overlaps (16, 20) -> 1 hour(s)
+E02 Mon : (9, 13) overlaps (12, 18) -> 1 hour(s)
 
-TOP PERFORMER(S): Bhavya with total 372
-LOW-AVERAGE SUBJECT(S) (below 60): Chemistry
-
-SUBJECT FAILURES (below 35)
-Deepak failed in Maths
-
-RANK LIST
-1 Bhavya 372
-2 Anil 310
-3 Eshwar 265
-4 Fatima 216
-5 Chitra 195
-6 Deepak 165
+Total conflicts: 2
+Employees with conflicting schedules: E01, E02

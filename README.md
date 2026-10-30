@@ -1,74 +1,76 @@
-# Case Study 7: Student Marks Matrix Analysis
-*(Original list number: 42)*
+# Case Study 8: Tuple-Based Employee Shift Conflict Detection
+*(Original list number: 48)*
 
 ## 1. Problem Statement
-Marks of several students in several subjects are stored in a matrix (nested list). Calculate row-wise totals and averages, column-wise statistics, identify the top performer(s), detect low-average subjects, list subject failures and rank the students.
+Employee shifts are stored as tuples (employee, day, start hour, end hour). Detect invalid shifts, compare time intervals of the same employee on the same day, report overlaps with their duration and list the employees who have conflicting schedules.
 
 ## 2. Objectives
-- Represent a table as a nested list and access marks[row][col].
-- Calculate row-wise and column-wise statistics using nested loops.
-- Find highest and lowest marks with the student names.
-- Handle ties for the top performer.
-- Rank students using bubble sort on an index list.
+- Store records as tuples and unpack them in loops.
+- Validate time intervals.
+- Apply the interval overlap rule: start1 < end2 and start2 < end1.
+- Compare all pairs using nested loops.
+- Report overlap duration and unique employee list.
 
 ## 3. Assumptions
-- 6 students and 4 subjects, marks out of 100.
-- Pass mark in each subject = 35.
-- A subject whose class average is below 60 is a low-average subject.
-- Names and subjects are stored in separate lists with the same order as the matrix.
+- Times are whole hours in 24-hour format (0 to 24).
+- A shift must end after it starts (no overnight shifts).
+- Shifts that only touch (one ends exactly when the next starts) are NOT conflicts.
+- Only shifts of the same employee on the same day are compared.
 
 ## 4. Algorithm
-1. Start; create names, subjects and the marks matrix.
-2. For each row, add the marks to get the total and compute the average.
-3. Print the marks table with totals and averages.
-4. For each column, compute average, highest (with name) and lowest (with name).
-5. If the column average < 60, add the subject to the weak list.
-6. Find the largest total and list every student who has it.
-7. For each student, list subjects with marks below 35.
-8. Create an index list and bubble sort it by total (descending).
-9. Print the rank list; stop.
+1. Start; create the list of shift tuples.
+2. Unpack each tuple; if start < 0 or end > 24 or start >= end, report it as invalid; else add to valid list.
+3. For i over valid shifts, for j after i, unpack both tuples.
+4. If employee and day are equal and start1 < end2 and start2 < end1, there is a conflict.
+5. Overlap hours = earliest end - latest start.
+6. Print the conflict and add the employee to the conflict list if not already there.
+7. Print total conflicts and the employee list; stop.
 
 ## 5. Pseudocode
 ```text
 START
-  names, subjects, marks (nested list)
-  FOR each row r
-      totals[r] <- sum of marks[r][c] over all c
-      averages[r] <- totals[r] / number of subjects
-  PRINT table
-  FOR each column c
-      sum, highest, lowest, and who has them <- scan all rows
-      avg <- sum / number of students
-      PRINT statistics
-      IF avg < LOW_AVERAGE THEN add subject to weak list
-  best <- maximum of totals
-  PRINT every student whose total = best
-  PRINT weak subjects
-  FOR each row r
-      collect subjects where marks[r][c] < PASS_MARK
-      IF any THEN PRINT student and subjects
-  order <- [0,1,2,...]
-  BUBBLE SORT order by totals (high to low)
-  PRINT rank list
+  shifts <- list of tuples (emp, day, start, end)
+  valid <- empty list
+  FOR each shift IN shifts
+      UNPACK shift INTO emp, day, start, end
+      IF start < 0 OR end > 24 OR start >= end THEN PRINT invalid
+      ELSE append shift to valid
+  conflicts <- 0; conflict_employees <- empty list
+  FOR i FROM 0 TO length(valid) - 1
+      FOR j FROM i+1 TO length(valid) - 1
+          UNPACK valid[i] INTO e1, d1, s1, f1
+          UNPACK valid[j] INTO e2, d2, s2, f2
+          IF e1 = e2 AND d1 = d2 AND s1 < f2 AND s2 < f1 THEN
+              overlap <- MIN(f1,f2) - MAX(s1,s2)
+              PRINT conflict
+              conflicts <- conflicts + 1
+              IF e1 not in conflict_employees THEN append e1
+  PRINT totals and employee list
 END
 ```
 
 ## 6. Flowchart
 ```mermaid
 flowchart TD
-    A([Start]) --> B[Create names, subjects, marks matrix]
-    B --> C[Row loop: totals and averages]
-    C --> D[Print marks table]
-    D --> E[Column loop: average, highest, lowest]
-    E --> F{Average below 60?}
-    F -- Yes --> G[Add to weak subjects]
-    F -- No --> H[Next column]
-    G --> H
-    H --> I[Find top performer or performers]
-    I --> J[Find students failing any subject]
-    J --> K[Bubble sort index list by total]
-    K --> L[Print rank list]
-    L --> M([Stop])
+    A([Start]) --> B[Create shift tuples]
+    B --> C[Take next shift and unpack]
+    C --> D{Valid interval?}
+    D -- No --> E[Print invalid]
+    D -- Yes --> F[Add to valid list]
+    E --> G{More shifts?}
+    F --> G
+    G -- Yes --> C
+    G -- No --> H[Compare every pair i, j]
+    H --> I{Same employee and day?}
+    I -- No --> N[Next pair]
+    I -- Yes --> J{s1 < f2 and s2 < f1?}
+    J -- No --> N
+    J -- Yes --> K[Print overlap, add employee]
+    K --> N
+    N --> O{More pairs?}
+    O -- Yes --> H
+    O -- No --> P[Print summary]
+    P --> Q([Stop])
 ```
 
 ## 7. Python Source Code
@@ -76,125 +78,74 @@ The full program is in [`program.py`](program.py).
 
 ```python
 # ============================================================
-# Case Study 7: Student Marks Matrix Analysis
-# Uses: nested lists, nested loops, row/column statistics
+# Case Study 8: Tuple-Based Employee Shift Conflict Detection
+# Uses: tuples, tuple unpacking, lists, nested loops
 # ============================================================
 
-names = ["Anil", "Bhavya", "Chitra", "Deepak", "Eshwar", "Fatima"]
-subjects = ["Maths", "Physics", "Chemistry", "Python"]
-marks = [                       # nested list: one row per student
-    [78, 82, 59, 91],
-    [92, 88, 95, 97],
-    [45, 38, 52, 60],
-    [30, 42, 38, 55],
-    [66, 71, 48, 80],
-    [55, 49, 40, 72],
+# Each shift is a tuple: (employee, day, start_hour, end_hour) in 24-hour time
+shifts = [
+    ("E01", "Mon", 9, 17),
+    ("E02", "Mon", 9, 13),
+    ("E01", "Mon", 16, 20),     # overlaps with E01's first shift
+    ("E03", "Tue", 8, 16),
+    ("E02", "Mon", 12, 18),     # overlaps with E02's first shift
+    ("E03", "Tue", 16, 22),     # touches (not overlaps) E03's first shift
+    ("E04", "Wed", 14, 10),     # invalid: ends before it starts
+    ("E01", "Tue", 9, 17),
+    ("E01", "Tue", 17, 23),     # back-to-back, no conflict
+    ("E05", "Thu", 6, 26),      # invalid: hour above 24
 ]
-PASS_MARK = 35          # below this in any subject = fail in that subject
-LOW_AVERAGE = 60        # subject average below this is flagged as weak
 
-rows = len(marks)
-cols = len(subjects)
+# ---- Step 1: separate valid and invalid shifts ----
+valid_shifts = []
+print("=== VALIDATION ===")
+for shift in shifts:
+    emp, day, start, end = shift                  # unpacking
+    if start < 0 or end > 24 or start >= end:
+        print("INVALID shift:", shift)
+    else:
+        valid_shifts.append(shift)
+print("Valid shifts:", len(valid_shifts), "| Invalid shifts:", len(shifts) - len(valid_shifts))
 
-# ---- Row-wise statistics ----
-totals = []
-averages = []
-for r in range(rows):
-    t = 0
-    for c in range(cols):
-        t = t + marks[r][c]
-    totals.append(t)
-    averages.append(t / cols)
+# ---- Step 2: compare every pair of valid shifts ----
+print("\n=== CONFLICTS ===")
+conflict_employees = []
+conflict_count = 0
+for i in range(len(valid_shifts)):
+    for j in range(i + 1, len(valid_shifts)):
+        e1, d1, s1, f1 = valid_shifts[i]
+        e2, d2, s2, f2 = valid_shifts[j]
+        if e1 == e2 and d1 == d2:                 # same employee, same day
+            if s1 < f2 and s2 < f1:               # interval overlap test
+                latest_start = s1
+                if s2 > s1:
+                    latest_start = s2
+                earliest_end = f1
+                if f2 < f1:
+                    earliest_end = f2
+                overlap = earliest_end - latest_start
+                print(e1, d1, ":", (s1, f1), "overlaps", (s2, f2), "->", overlap, "hour(s)")
+                conflict_count = conflict_count + 1
+                if e1 not in conflict_employees:
+                    conflict_employees.append(e1)
 
-# ---- Print the marks table ----
-print("MARKS TABLE")
-header = "Name".ljust(8)
-for s in subjects:
-    header = header + s.ljust(11)
-print(header + "Total  Average")
-for r in range(rows):
-    line = names[r].ljust(8)
-    for c in range(cols):
-        line = line + str(marks[r][c]).ljust(11)
-    print(line + str(totals[r]).ljust(7) + str(round(averages[r], 2)))
-
-# ---- Column-wise statistics ----
-print("\nSUBJECT STATISTICS")
-weak_subjects = []
-for c in range(cols):
-    col_total = 0
-    highest = marks[0][c]
-    lowest = marks[0][c]
-    high_name = names[0]
-    low_name = names[0]
-    for r in range(rows):
-        value = marks[r][c]
-        col_total = col_total + value
-        if value > highest:
-            highest = value
-            high_name = names[r]
-        if value < lowest:
-            lowest = value
-            low_name = names[r]
-    avg = col_total / rows
-    print(subjects[c].ljust(10), "average", str(round(avg, 2)).ljust(6),
-          "highest", highest, "(" + high_name + ")",
-          "lowest", lowest, "(" + low_name + ")")
-    if avg < LOW_AVERAGE:
-        weak_subjects.append(subjects[c])
-
-# ---- Top performer(s): handles ties ----
-best = totals[0]
-for t in totals:
-    if t > best:
-        best = t
-top = []
-for r in range(rows):
-    if totals[r] == best:
-        top.append(names[r])
-print("\nTOP PERFORMER(S):", ", ".join(top), "with total", best)
-
-# ---- Weak subjects ----
-if len(weak_subjects) == 0:
-    print("No subject has an average below", LOW_AVERAGE)
+if conflict_count == 0:
+    print("No conflicts found.")
 else:
-    print("LOW-AVERAGE SUBJECT(S) (below " + str(LOW_AVERAGE) + "):", ", ".join(weak_subjects))
-
-# ---- Students failing any subject ----
-print("\nSUBJECT FAILURES (below " + str(PASS_MARK) + ")")
-anyone = False
-for r in range(rows):
-    failed = []
-    for c in range(cols):
-        if marks[r][c] < PASS_MARK:
-            failed.append(subjects[c])
-    if len(failed) > 0:
-        print(names[r], "failed in", ", ".join(failed))
-        anyone = True
-if not anyone:
-    print("None")
-
-# ---- Rank list (bubble sort on an index list) ----
-order = list(range(rows))
-for i in range(rows - 1):
-    for j in range(rows - 1 - i):
-        if totals[order[j]] < totals[order[j + 1]]:
-            order[j], order[j + 1] = order[j + 1], order[j]
-print("\nRANK LIST")
-for position in range(rows):
-    idx = order[position]
-    print(position + 1, names[idx], totals[idx])
+    print("\nTotal conflicts:", conflict_count)
+    print("Employees with conflicting schedules:", ", ".join(conflict_employees))
 ```
 
 ## 8. Test Cases
 | No. | Test Case | Input | Expected Output |
 |-----|-----------|-------|-----------------|
-| 1 | Totals | Built-in matrix | Anil 310, Bhavya 372, Chitra 195, Deepak 165, Eshwar 265, Fatima 216 |
-| 2 | Top performer | Built-in | Bhavya with total 372 |
-| 3 | Subject averages | Built-in | Maths 61.0, Physics 61.67, Chemistry 55.33, Python 75.83 |
-| 4 | Low-average subject | Threshold 60 | Chemistry flagged |
-| 5 | Failures | Pass mark 35 | Deepak failed in Maths (30) |
-| 6 | Rank order | Built-in | Bhavya, Anil, Eshwar, Fatima, Chitra, Deepak |
+| 1 | Overlapping shifts | E01 Mon (9,17) and (16,20) | Conflict, overlap 1 hour |
+| 2 | Overlapping shifts | E02 Mon (9,13) and (12,18) | Conflict, overlap 1 hour |
+| 3 | Touching shifts | E03 Tue (8,16) and (16,22) | No conflict |
+| 4 | Back-to-back shifts | E01 Tue (9,17) and (17,23) | No conflict |
+| 5 | End before start | E04 Wed (14,10) | INVALID shift |
+| 6 | Hour above 24 | E05 Thu (6,26) | INVALID shift |
+| 7 | Summary | All data | Valid 8, invalid 2, conflicts 2, employees E01 and E02 |
 
 ## 9. Output Screenshot
 Run `python program.py`, take a screenshot of the terminal and save it as `screenshots/output.png`.
@@ -204,35 +155,18 @@ Run `python program.py`, take a screenshot of the terminal and save it as `scree
 Text copy of the output: [`sample_output.txt`](sample_output.txt)
 
 ```text
-MARKS TABLE
-Name    Maths      Physics    Chemistry  Python     Total  Average
-Anil    78         82         59         91         310    77.5
-Bhavya  92         88         95         97         372    93.0
-Chitra  45         38         52         60         195    48.75
-Deepak  30         42         38         55         165    41.25
-Eshwar  66         71         48         80         265    66.25
-Fatima  55         49         40         72         216    54.0
+=== VALIDATION ===
+INVALID shift: ('E04', 'Wed', 14, 10)
+INVALID shift: ('E05', 'Thu', 6, 26)
+Valid shifts: 8 | Invalid shifts: 2
 
-SUBJECT STATISTICS
-Maths      average 61.0   highest 92 (Bhavya) lowest 30 (Deepak)
-Physics    average 61.67  highest 88 (Bhavya) lowest 38 (Chitra)
-Chemistry  average 55.33  highest 95 (Bhavya) lowest 38 (Deepak)
-Python     average 75.83  highest 97 (Bhavya) lowest 55 (Deepak)
+=== CONFLICTS ===
+E01 Mon : (9, 17) overlaps (16, 20) -> 1 hour(s)
+E02 Mon : (9, 13) overlaps (12, 18) -> 1 hour(s)
 
-TOP PERFORMER(S): Bhavya with total 372
-LOW-AVERAGE SUBJECT(S) (below 60): Chemistry
-
-SUBJECT FAILURES (below 35)
-Deepak failed in Maths
-
-RANK LIST
-1 Bhavya 372
-2 Anil 310
-3 Eshwar 265
-4 Fatima 216
-5 Chitra 195
-6 Deepak 165
+Total conflicts: 2
+Employees with conflicting schedules: E01, E02
 ```
 
 ## 10. Conclusion
-Nested lists made it easy to compute both row-wise and column-wise statistics with nested loops. The program also shows how an index list can be sorted to rank students without disturbing the original matrix.
+Tuples are a natural fit for fixed records, and unpacking made the comparison code readable. The overlap rule treats back-to-back shifts correctly, and the program clearly separates invalid data from real scheduling conflicts.
