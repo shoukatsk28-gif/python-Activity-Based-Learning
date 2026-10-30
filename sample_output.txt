@@ -1,8 +1,16 @@
-Enter diamond size n (2 to 9): 
-   1   
-  2 2  
- 3   3 
-4     4
- 3   3 
-  2 2  
-   1   
+How many passwords to check? 
+Password 1: RESULT: VALID - password meets all rules
+
+Password 2: RESULT: INVALID - 4 rule(s) failed
+  - No uppercase letter
+  - No digit
+  - No special character from !@#$%^&*
+  - Contains prohibited text 'password'
+
+Password 3: RESULT: INVALID - 1 rule(s) failed
+  - Character 'A' repeated 3+ times in a row
+
+Password 4: RESULT: INVALID - 1 rule(s) failed
+  - Too short: 4 characters (minimum 8)
+
+Password 5: RESULT: VALID - password meets all rules

@@ -1,46 +1,55 @@
-# Case Study 3: Advanced Numeric Pattern Generator (Hollow Diamond)
-*(Original list number: 27)*
+# Case Study 4: Password Policy Validation Engine
+*(Original list number: 29)*
 
 ## 1. Problem Statement
-Generate a hollow numeric diamond of height 2n-1 for a user-given n. Only the border of the diamond is printed, using the row number at both edges. Invalid sizes must be rejected and the output must stay aligned.
+Check a number of password strings against a policy: minimum length, required character categories, no repeated characters and no prohibited substrings. For each password, explain every rule that failed.
 
 ## 2. Objectives
-- Use nested loops to build a symmetric pattern.
-- Validate user input with a while loop and string checks.
-- Calculate the column positions of the two border digits mathematically.
-- Keep the output perfectly aligned.
+- Scan strings character by character using loops.
+- Check character categories without library functions.
+- Detect three identical characters in a row and banned substrings.
+- Collect all failures in a list and display them clearly.
 
 ## 3. Assumptions
-- Valid size n is a whole number from 2 to 9 (so every number is a single digit and alignment is not broken).
-- The diamond has 2n-1 rows and 2n-1 columns.
-- The number printed on a row is its distance from the top (growing) then from the bottom (shrinking).
+- Minimum length = 8.
+- Need at least one uppercase, lowercase, digit and special character from !@#$%^&*.
+- No character may appear 3 or more times consecutively.
+- Prohibited words (case-insensitive): password, admin, 1234, qwerty.
+- The user decides how many passwords to check.
 
 ## 4. Algorithm
-1. Start.
-2. Repeat: read n as text; accept only if it is all digits and 2 <= n <= 9.
-3. width = 2n - 1.
-4. For row = 1 to 2n-1: if row <= n then k = row, else k = 2n - row.
-5. left = n - k and right = n + k - 2 (0-indexed columns).
-6. Build the line: for each column, add k if column is left or right, otherwise a space.
-7. Print the line; stop after the last row.
+1. Start; read how many passwords to test (positive whole number).
+2. For each password, create an empty failures list.
+3. If length < 8, add a failure.
+4. Loop through characters and set flags for uppercase, lowercase, digit, special.
+5. Add a failure for every missing category.
+6. Compare each character with the next two; if all equal, add a failure and stop checking.
+7. Convert to lowercase; for each banned word, if it is inside the password add a failure.
+8. If failures list is empty print VALID, else print each failure.
+9. Stop after the last password.
 
 ## 5. Pseudocode
 ```text
 START
-  REPEAT
-      READ text
-  UNTIL text is digits AND 2 <= text <= 9
-  n <- integer(text)
-  width <- 2*n - 1
-  FOR row FROM 1 TO 2*n - 1
-      IF row <= n THEN k <- row ELSE k <- 2*n - row
-      left <- n - k
-      right <- n + k - 2
-      line <- ""
-      FOR col FROM 0 TO width - 1
-          IF col = left OR col = right THEN line <- line + k
-          ELSE line <- line + space
-      PRINT line
+  READ count (positive integer)
+  FOR number FROM 1 TO count
+      READ pw
+      failures <- empty list
+      IF length(pw) < 8 THEN add "too short"
+      has_upper, has_lower, has_digit, has_special <- FALSE
+      FOR each ch IN pw
+          IF ch is A-Z THEN has_upper <- TRUE
+          ELSE IF ch is a-z THEN has_lower <- TRUE
+          ELSE IF ch is 0-9 THEN has_digit <- TRUE
+          ELSE IF ch IN specials THEN has_special <- TRUE
+      add a failure for each flag still FALSE
+      FOR i FROM 0 TO length-3
+          IF pw[i] = pw[i+1] = pw[i+2] THEN add failure; BREAK
+      low <- lowercase(pw)
+      FOR each word IN banned
+          IF word inside low THEN add failure
+      IF failures empty THEN PRINT VALID
+      ELSE PRINT INVALID and every failure
   ENDFOR
 END
 ```
@@ -48,17 +57,20 @@ END
 ## 6. Flowchart
 ```mermaid
 flowchart TD
-    A([Start]) --> B[Read n]
-    B --> C{Digits and 2 to 9?}
-    C -- No --> D[Print error] --> B
-    C -- Yes --> E[width = 2n - 1, row = 1]
-    E --> F{row <= 2n - 1?}
-    F -- No --> Z([Stop])
-    F -- Yes --> G[k = row or 2n - row]
-    G --> H[left = n - k, right = n + k - 2]
-    H --> I[Loop columns: place k at left and right, else space]
-    I --> J[Print line, row = row + 1]
-    J --> F
+    A([Start]) --> B[Read number of passwords]
+    B --> C[Read next password]
+    C --> D[failures = empty list]
+    D --> E[Check length]
+    E --> F[Scan characters: upper, lower, digit, special]
+    F --> G[Check 3 repeated characters in a row]
+    G --> H[Check banned words in lowercase copy]
+    H --> I{failures empty?}
+    I -- Yes --> J[Print VALID]
+    I -- No --> K[Print INVALID and list reasons]
+    J --> L{More passwords?}
+    K --> L
+    L -- Yes --> C
+    L -- No --> M([Stop])
 ```
 
 ## 7. Python Source Code
@@ -66,46 +78,80 @@ The full program is in [`program.py`](program.py).
 
 ```python
 # ============================================================
-# Case Study 3: Advanced Numeric Pattern Generator
-# Hollow numeric diamond using nested loops
+# Case Study 4: Password Policy Validation Engine
+# Uses: strings, loops, lists, conditions
 # ============================================================
 
-# ---- Input validation: keep asking until 2 <= n <= 9 ----
+MIN_LENGTH = 8
+SPECIALS = "!@#$%^&*"
+BANNED = ["password", "admin", "1234", "qwerty"]
+
 while True:
-    text = input("Enter diamond size n (2 to 9): ").strip()
-    if text.isdigit() and 2 <= int(text) <= 9:
-        n = int(text)
+    t = input("How many passwords to check? ").strip()
+    if t.isdigit() and int(t) > 0:
+        count = int(t)
         break
-    print("Invalid size! Enter a whole number from 2 to 9.")
+    print("Enter a positive whole number.")
 
-width = 2 * n - 1            # total characters in the widest line
-print()
+for number in range(1, count + 1):
+    pw = input("\nPassword " + str(number) + ": ")
+    failures = []                       # list of explanation strings
 
-for row in range(1, 2 * n):          # rows 1 .. 2n-1
-    if row <= n:
-        k = row                      # upper half: number grows
+    # Rule 1: length
+    if len(pw) < MIN_LENGTH:
+        failures.append("Too short: " + str(len(pw)) + " characters (minimum " + str(MIN_LENGTH) + ")")
+
+    # Rule 2: character categories (checked with a loop over characters)
+    has_upper = False
+    has_lower = False
+    has_digit = False
+    has_special = False
+    for ch in pw:
+        if "A" <= ch <= "Z":
+            has_upper = True
+        elif "a" <= ch <= "z":
+            has_lower = True
+        elif "0" <= ch <= "9":
+            has_digit = True
+        elif ch in SPECIALS:
+            has_special = True
+    if not has_upper:
+        failures.append("No uppercase letter")
+    if not has_lower:
+        failures.append("No lowercase letter")
+    if not has_digit:
+        failures.append("No digit")
+    if not has_special:
+        failures.append("No special character from " + SPECIALS)
+
+    # Rule 3: no character repeated 3 times in a row
+    for i in range(len(pw) - 2):
+        if pw[i] == pw[i + 1] and pw[i + 1] == pw[i + 2]:
+            failures.append("Character '" + pw[i] + "' repeated 3+ times in a row")
+            break
+
+    # Rule 4: prohibited substrings (case-insensitive)
+    low = pw.lower()
+    for word in BANNED:
+        if word in low:
+            failures.append("Contains prohibited text '" + word + "'")
+
+    if len(failures) == 0:
+        print("RESULT: VALID - password meets all rules")
     else:
-        k = 2 * n - row              # lower half: number shrinks
-    left = n - k                     # column of the left digit (0-indexed)
-    right = n + k - 2                # column of the right digit
-    line = ""
-    for col in range(width):         # build the line column by column
-        if col == left or col == right:
-            line = line + str(k)
-        else:
-            line = line + " "
-    print(line)
+        print("RESULT: INVALID -", len(failures), "rule(s) failed")
+        for f in failures:
+            print("  -", f)
 ```
 
 ## 8. Test Cases
 | No. | Test Case | Input | Expected Output |
 |-----|-----------|-------|-----------------|
-| 1 | n = 4 | 4 | 7 lines; middle line is 4 spaces-4; top and bottom show 1 |
-| 2 | n = 3 | 3 | 5-line diamond with 1, 2 2, 3 3, 2 2, 1 |
-| 3 | n = 2 | 2 | 3-line diamond:  1 / 2 2 /  1 |
-| 4 | Too large | 12 | Invalid size message, asks again |
-| 5 | Too small | 1 | Invalid size message, asks again |
-| 6 | Not a number | x | Invalid size message, asks again |
+| 1 | Valid | Hello@123 | VALID |
+| 2 | Banned word, missing categories | password | INVALID - 4 rules: no uppercase, no digit, no special, contains 'password' |
+| 3 | Repeated characters | AAAbc1!x | INVALID - 'A' repeated 3+ times |
+| 4 | Too short | Ab1! | INVALID - too short: 4 characters |
+| 5 | Strong password | Secure#Pass9 | VALID |
 
 ## 9. Output Screenshot
 Run `python program.py`, take a screenshot of the terminal and save it as `screenshots/output.png`.
@@ -115,15 +161,23 @@ Run `python program.py`, take a screenshot of the terminal and save it as `scree
 Text copy of the output: [`sample_output.txt`](sample_output.txt)
 
 ```text
-Enter diamond size n (2 to 9): 
-   1   
-  2 2  
- 3   3 
-4     4
- 3   3 
-  2 2  
-   1   
+How many passwords to check? 
+Password 1: RESULT: VALID - password meets all rules
+
+Password 2: RESULT: INVALID - 4 rule(s) failed
+  - No uppercase letter
+  - No digit
+  - No special character from !@#$%^&*
+  - Contains prohibited text 'password'
+
+Password 3: RESULT: INVALID - 1 rule(s) failed
+  - Character 'A' repeated 3+ times in a row
+
+Password 4: RESULT: INVALID - 1 rule(s) failed
+  - Too short: 4 characters (minimum 8)
+
+Password 5: RESULT: VALID - password meets all rules
 ```
 
 ## 10. Conclusion
-The program prints a perfectly aligned hollow numeric diamond using only nested loops and simple arithmetic on column positions. Input validation prevents invalid dimensions, which makes the program robust.
+The validator reports every failed rule instead of stopping at the first one, which gives useful feedback. It uses only loops, comparisons, lists and strings, matching the syllabus.
