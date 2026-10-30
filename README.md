@@ -1,75 +1,71 @@
-# Case Study 9: Multi-Stage ATM Transaction Audit
-*(Original list number: 86)*
+# Case Study 10: Disaster Relief Supply Allocation
+*(Original list number: 94)*
 
 ## 1. Problem Statement
-Process a sequence of deposits, withdrawals and transfers on a simulated account. Maintain the balance, reject invalid operations with reasons, enforce limits and detect suspicious repeated patterns. Finish with an audit summary.
+Limited relief supplies must be shared among several affected areas. Compare the stock with area-wise requirements, prioritise urgent areas, allocate supplies by a prescribed policy and calculate the remaining unmet demand and leftover stock.
 
 ## 2. Objectives
-- Process a list of transaction tuples with unpacking.
-- Validate each transaction against several rules in the right order.
-- Maintain a running balance and daily withdrawal total.
-- Detect the same transaction repeated three times in a row.
-- Produce a clear audit summary.
+- Combine tuples (area details), lists (stock) and a nested list (demand matrix).
+- Sort areas by priority using bubble sort on an index list.
+- Allocate each item without exceeding available stock.
+- Calculate unmet demand per area and remaining stock.
 
 ## 3. Assumptions
-- Opening balance = Rs.10,000; minimum balance to maintain = Rs.500.
-- Per-withdrawal limit = Rs.5,000; daily withdrawal limit = Rs.10,000; transfer limit = Rs.20,000.
-- Types: D = deposit, W = withdrawal, T = transfer (needs a target account).
-- Suspicious = same type and amount three times consecutively (rejected attempts also count).
-- All transactions happen on the same day.
+- 3 item types: food kits, water cans, medicine kits.
+- Urgency 1 = most urgent, 3 = least urgent.
+- Policy: serve areas by urgency (lower number first); if urgency is equal, the larger population goes first.
+- Each area gets what it needs if stock allows, otherwise whatever stock is left (partial allocation).
+- Stock: 500 food, 400 water, 200 medicine.
 
 ## 4. Algorithm
-1. Start; set balance and limits; create transaction tuples.
-2. For each transaction, unpack type, amount and target.
-3. Validate: type must be D/W/T; amount > 0; for W check per-transaction limit, daily limit and minimum balance; for T check target, transfer limit and minimum balance.
-4. If no reason to reject, update balance (and daily withdrawals for W) and count as accepted; else store (number, reason).
-5. Update the repeat counter using the (type, amount) pair; at 3 in a row record the transaction as suspicious.
-6. Print one line for each transaction.
-7. Print the summary: counts, rejection reasons, suspicious positions, withdrawn total, final balance.
+1. Start; store item names, stock, area tuples and the demand matrix.
+2. Create an index list of areas and bubble sort it by (urgency, then population descending).
+3. Create an allocation matrix filled with zeros and copy the stock into remaining.
+4. For each area in priority order and for each item: give = min(need, remaining); store it and reduce remaining.
+5. Print the priority order, allocation, unmet demand per area and remaining stock.
+6. Add up total unmet units; stop.
 
 ## 5. Pseudocode
 ```text
 START
-  balance <- 10000; withdrawn_today <- 0
-  rejected <- empty list; suspicious <- empty list
-  last_key <- ("", 0); run <- 0
-  FOR each transaction t IN transactions
-      UNPACK t INTO kind, amount, target
-      reason <- ""
-      IF kind not in D,W,T THEN reason <- "unknown type"
-      ELSE IF amount <= 0 THEN reason <- "invalid amount"
-      ELSE IF kind = W THEN
-           check per-withdrawal limit, daily limit, minimum balance
-      ELSE IF kind = T THEN
-           check target present, transfer limit, minimum balance
-      IF reason = "" THEN
-           update balance (and withdrawn_today for W)
-      ELSE append (number, reason) to rejected
-      IF (kind, amount) = last_key THEN run <- run + 1
-      ELSE run <- 1; last_key <- (kind, amount)
-      IF run = 3 THEN append number to suspicious
-      PRINT status line
-  PRINT audit summary
+  items, stock, areas (tuples), demand (nested list)
+  order <- [0, 1, 2, ...]
+  BUBBLE SORT order:
+      swap neighbours if next has smaller urgency
+      OR (same urgency AND larger population)
+  allocation <- matrix of zeros
+  remaining <- copy of stock
+  FOR each idx IN order
+      FOR each item j
+          need <- demand[idx][j]
+          IF remaining[j] >= need THEN give <- need
+          ELSE give <- remaining[j]
+          allocation[idx][j] <- give
+          remaining[j] <- remaining[j] - give
+  PRINT priority order
+  PRINT allocation (given / demanded)
+  PRINT unmet demand (demand - allocation) for every area
+  PRINT remaining stock and total unmet units
 END
 ```
 
 ## 6. Flowchart
 ```mermaid
 flowchart TD
-    A([Start]) --> B[Set balance, limits, transaction list]
-    B --> C[Take next transaction, unpack]
-    C --> D{Rule violated?}
-    D -- No --> E[Update balance and daily total]
-    D -- Yes --> F[Record rejection reason]
-    E --> G[Update repeat counter]
-    F --> G
-    G --> H{Same transaction 3 times in a row?}
-    H -- Yes --> I[Mark as suspicious]
-    H -- No --> J[Print status line]
-    I --> J
-    J --> K{More transactions?}
-    K -- Yes --> C
-    K -- No --> L[Print audit summary]
+    A([Start]) --> B[Read stock, areas, demand matrix]
+    B --> C[Sort area indexes by urgency then population]
+    C --> D[Take next area in priority order]
+    D --> E[Take next item]
+    E --> F{remaining >= need?}
+    F -- Yes --> G[give = need]
+    F -- No --> H[give = remaining]
+    G --> I[Update allocation and remaining stock]
+    H --> I
+    I --> J{More items?}
+    J -- Yes --> E
+    J -- No --> K{More areas?}
+    K -- Yes --> D
+    K -- No --> L[Print allocation, unmet demand, remaining stock]
     L --> M([Stop])
 ```
 
@@ -78,121 +74,104 @@ The full program is in [`program.py`](program.py).
 
 ```python
 # ============================================================
-# Case Study 9: Multi-Stage ATM Transaction Audit
-# Uses: tuples, unpacking, lists, loops, conditions
+# Case Study 10: Disaster Relief Supply Allocation
+# Uses: lists, nested lists, tuples, unpacking, sorting, loops
 # ============================================================
 
-OPENING_BALANCE = 10000
-MIN_BALANCE = 500            # balance must never fall below this
-PER_WITHDRAWAL_LIMIT = 5000
-DAILY_WITHDRAWAL_LIMIT = 10000
-TRANSFER_LIMIT = 20000
+items = ["Food kits", "Water cans", "Medicine kits"]
+stock = [500, 400, 200]                 # available stock of each item
 
-# (type, amount, target account)   D = deposit, W = withdraw, T = transfer
-transactions = [
-    ("D", 5000, ""),
-    ("W", 2000, ""),
-    ("W", 2000, ""),
-    ("W", 2000, ""),          # 3rd identical withdrawal in a row -> suspicious
-    ("W", 6000, ""),          # above per-withdrawal limit
-    ("T", 3000, "ACC205"),
-    ("D", -200, ""),          # invalid amount
-    ("W", 5000, ""),          # would exceed daily limit
-    ("W", 4000, ""),
-    ("T", 1600, "ACC310"),    # would break minimum balance
-    ("X", 100, ""),           # unknown type
-    ("T", 500, ""),           # missing target account
-    ("D", 300, ""),
-    ("D", 300, ""),
-    ("D", 300, ""),           # 3 identical deposits -> suspicious
+# area tuple: (name, population, urgency)   urgency 1 = most urgent, 3 = least
+areas = [
+    ("Riverside",    1200, 1),
+    ("Hilltop",       800, 2),
+    ("Coastal Town", 2000, 1),
+    ("Old Market",    500, 3),
+]
+# nested list: demand[i][j] = units of item j required by area i
+demand = [
+    [300, 250, 120],
+    [200, 150,  60],
+    [400, 300, 100],
+    [150, 100,  40],
 ]
 
-balance = OPENING_BALANCE
-withdrawn_today = 0
-accepted = 0
-rejected = []                # list of (number, reason) tuples
-suspicious = []              # list of transaction numbers
-last_key = ("", 0)           # previous (type, amount)
-run_length = 0               # how many times in a row the same transaction appeared
+# ---- Priority order: lower urgency number first; larger population breaks ties ----
+order = list(range(len(areas)))
+for i in range(len(order) - 1):
+    for j in range(len(order) - 1 - i):
+        name1, pop1, urg1 = areas[order[j]]
+        name2, pop2, urg2 = areas[order[j + 1]]
+        swap = False
+        if urg2 < urg1:
+            swap = True
+        elif urg2 == urg1 and pop2 > pop1:
+            swap = True
+        if swap:
+            order[j], order[j + 1] = order[j + 1], order[j]
 
-print("Opening balance:", balance)
-print("No  Type Amount  Status    Balance")
+# ---- Allocation (policy: serve areas in priority order; give what is available) ----
+allocation = []
+for i in range(len(areas)):
+    allocation.append([0, 0, 0])
+remaining = stock[:]                    # copy of the stock list
 
-number = 0
-for t in transactions:
-    number = number + 1
-    kind, amount, target = t               # tuple unpacking
-    reason = ""
-
-    # ---- validation ----
-    if kind != "D" and kind != "W" and kind != "T":
-        reason = "unknown transaction type"
-    elif amount <= 0:
-        reason = "amount must be positive"
-    elif kind == "W":
-        if amount > PER_WITHDRAWAL_LIMIT:
-            reason = "exceeds per-withdrawal limit"
-        elif withdrawn_today + amount > DAILY_WITHDRAWAL_LIMIT:
-            reason = "exceeds daily withdrawal limit"
-        elif balance - amount < MIN_BALANCE:
-            reason = "minimum balance would be broken"
-    elif kind == "T":
-        if target == "":
-            reason = "missing target account"
-        elif amount > TRANSFER_LIMIT:
-            reason = "exceeds transfer limit"
-        elif balance - amount < MIN_BALANCE:
-            reason = "minimum balance would be broken"
-
-    # ---- apply the transaction ----
-    if reason == "":
-        if kind == "D":
-            balance = balance + amount
-        elif kind == "W":
-            balance = balance - amount
-            withdrawn_today = withdrawn_today + amount
+for idx in order:
+    for j in range(len(items)):
+        need = demand[idx][j]
+        if remaining[j] >= need:
+            give = need
         else:
-            balance = balance - amount
-        accepted = accepted + 1
-        status = "OK"
+            give = remaining[j]         # only what is left
+        allocation[idx][j] = give
+        remaining[j] = remaining[j] - give
+
+# ---- Report ----
+print("PRIORITY ORDER:")
+position = 1
+for idx in order:
+    name, pop, urg = areas[idx]
+    print(" ", position, name, "(urgency " + str(urg) + ", population " + str(pop) + ")")
+    position = position + 1
+
+print("\nALLOCATION (given / demanded):")
+total_unmet = 0
+for idx in order:
+    name = areas[idx][0]
+    line = name.ljust(13)
+    for j in range(len(items)):
+        line = line + items[j] + " " + str(allocation[idx][j]) + "/" + str(demand[idx][j]) + "  "
+        total_unmet = total_unmet + (demand[idx][j] - allocation[idx][j])
+    print(line)
+
+print("\nUNMET DEMAND BY AREA:")
+for idx in order:
+    name = areas[idx][0]
+    parts = []
+    for j in range(len(items)):
+        short = demand[idx][j] - allocation[idx][j]
+        if short > 0:
+            parts.append(items[j] + ": " + str(short))
+    if len(parts) == 0:
+        print(" ", name, "- fully served")
     else:
-        rejected.append((number, reason))
-        status = "REJECTED"
+        print(" ", name, "-", ", ".join(parts))
 
-    # ---- suspicious repeated pattern (same type+amount 3 times in a row) ----
-    if (kind, amount) == last_key:
-        run_length = run_length + 1
-    else:
-        run_length = 1
-        last_key = (kind, amount)
-    if run_length == 3:
-        suspicious.append(number)
-
-    print(str(number).ljust(3), kind.ljust(4), str(amount).ljust(7), status.ljust(9), balance)
-
-# ---- audit summary ----
-print("\n===== AUDIT SUMMARY =====")
-print("Transactions processed :", len(transactions))
-print("Accepted               :", accepted)
-print("Rejected               :", len(rejected))
-for num, why in rejected:
-    print("   #" + str(num), "-", why)
-print("Suspicious patterns at :", suspicious if len(suspicious) > 0 else "none")
-print("Total withdrawn today  :", withdrawn_today)
-print("Final balance          :", balance)
+print("\nREMAINING STOCK:")
+for j in range(len(items)):
+    print(" ", items[j], "=", remaining[j])
+print("Total unmet units:", total_unmet)
 ```
 
 ## 8. Test Cases
 | No. | Test Case | Input | Expected Output |
 |-----|-----------|-------|-----------------|
-| 1 | Over per-withdrawal limit | W 6000 | Rejected: exceeds per-withdrawal limit |
-| 2 | Negative deposit | D -200 | Rejected: amount must be positive |
-| 3 | Daily limit | W 5000 after 6000 withdrawn | Rejected: exceeds daily withdrawal limit |
-| 4 | Minimum balance | T 1600 with balance 2000 | Rejected: minimum balance would be broken |
-| 5 | Unknown type | X 100 | Rejected: unknown transaction type |
-| 6 | Missing target | T 500 with no account | Rejected: missing target account |
-| 7 | Repeated pattern | W 2000 three times; D 300 three times | Suspicious at #4 and #15 |
-| 8 | Final result | Whole list | Accepted 9, rejected 6, withdrawn 10000, final balance 2900 |
+| 1 | Priority order | Built-in areas | Coastal Town, Riverside, Hilltop, Old Market |
+| 2 | Tie on urgency | Coastal (2000) vs Riverside (1200), both urgency 1 | Coastal Town served first (bigger population) |
+| 3 | Full service | Coastal Town | 400/400 food, 300/300 water, 100/100 medicine |
+| 4 | Partial service | Riverside | 100/300 food, 100/250 water, 100/120 medicine |
+| 5 | No stock left | Hilltop and Old Market | Receive 0 of every item |
+| 6 | Totals | Whole run | Remaining stock 0 0 0; total unmet units 1070 |
 
 ## 9. Output Screenshot
 Run `python program.py`, take a screenshot of the terminal and save it as `screenshots/output.png`.
@@ -202,38 +181,30 @@ Run `python program.py`, take a screenshot of the terminal and save it as `scree
 Text copy of the output: [`sample_output.txt`](sample_output.txt)
 
 ```text
-Opening balance: 10000
-No  Type Amount  Status    Balance
-1   D    5000    OK        15000
-2   W    2000    OK        13000
-3   W    2000    OK        11000
-4   W    2000    OK        9000
-5   W    6000    REJECTED  9000
-6   T    3000    OK        6000
-7   D    -200    REJECTED  6000
-8   W    5000    REJECTED  6000
-9   W    4000    OK        2000
-10  T    1600    REJECTED  2000
-11  X    100     REJECTED  2000
-12  T    500     REJECTED  2000
-13  D    300     OK        2300
-14  D    300     OK        2600
-15  D    300     OK        2900
+PRIORITY ORDER:
+  1 Coastal Town (urgency 1, population 2000)
+  2 Riverside (urgency 1, population 1200)
+  3 Hilltop (urgency 2, population 800)
+  4 Old Market (urgency 3, population 500)
 
-===== AUDIT SUMMARY =====
-Transactions processed : 15
-Accepted               : 9
-Rejected               : 6
-   #5 - exceeds per-withdrawal limit
-   #7 - amount must be positive
-   #8 - exceeds daily withdrawal limit
-   #10 - minimum balance would be broken
-   #11 - unknown transaction type
-   #12 - missing target account
-Suspicious patterns at : [4, 15]
-Total withdrawn today  : 10000
-Final balance          : 2900
+ALLOCATION (given / demanded):
+Coastal Town Food kits 400/400  Water cans 300/300  Medicine kits 100/100  
+Riverside    Food kits 100/300  Water cans 100/250  Medicine kits 100/120  
+Hilltop      Food kits 0/200  Water cans 0/150  Medicine kits 0/60  
+Old Market   Food kits 0/150  Water cans 0/100  Medicine kits 0/40  
+
+UNMET DEMAND BY AREA:
+  Coastal Town - fully served
+  Riverside - Food kits: 200, Water cans: 150, Medicine kits: 20
+  Hilltop - Food kits: 200, Water cans: 150, Medicine kits: 60
+  Old Market - Food kits: 150, Water cans: 100, Medicine kits: 40
+
+REMAINING STOCK:
+  Food kits = 0
+  Water cans = 0
+  Medicine kits = 0
+Total unmet units: 1070
 ```
 
 ## 10. Conclusion
-The audit program applies layered validation rules in a clear order, keeps the account consistent, and flags suspicious repetition. It shows how tuples, lists, unpacking and conditions combine in a banking simulation.
+The program turns a priority policy into a clear, repeatable allocation. Nested lists store the demand matrix, tuples store area details and a sorted index list keeps the original data unchanged. Changing the stock or policy only needs small edits.
