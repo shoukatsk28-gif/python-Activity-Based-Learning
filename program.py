@@ -1,37 +1,44 @@
 # ============================================================
-# Case Study 5: Text Compression Using Character Runs (RLE)
-# Uses: strings, while loops, nested loops, conditions
+# Case Study 6: Nested Loop Calendar Generator
+# Uses: nested loops, strings, validation, conditions
 # ============================================================
 
-print("Run-Length Encoder (press Enter on an empty line to quit)")
+# ---- Input with validation ----
+while True:
+    t = input("Number of days in the month (28-31): ").strip()
+    if t.isdigit() and 28 <= int(t) <= 31:
+        days = int(t)
+        break
+    print("Invalid! A month has 28, 29, 30 or 31 days.")
 
 while True:
-    s = input("\nEnter text: ")
-    if s == "":
-        print("Goodbye!")
+    t = input("Starting weekday (1=Mon, 2=Tue, ... 7=Sun): ").strip()
+    if t.isdigit() and 1 <= int(t) <= 7:
+        start = int(t)
         break
+    print("Invalid! Enter a number from 1 to 7.")
 
-    encoded = ""
-    i = 0
-    while i < len(s):
-        ch = s[i]
-        run = 1
-        # count how many times this character repeats consecutively
-        while i + run < len(s) and s[i + run] == ch:
-            run = run + 1
-        encoded = encoded + ch + str(run)      # e.g. "aaa" -> "a3"
-        i = i + run                            # jump past the whole run
+month_name = input("Month name (for the title): ").strip()
 
-    print("Original :", s, "(length", len(s), ")")
-    print("Encoded  :", encoded, "(length", len(encoded), ")")
+# ---- Print the calendar ----
+print()
+print("      " + month_name)
+print("Mo Tu We Th Fr Sa Su")
 
-    if len(encoded) < len(s):
-        saved = len(s) - len(encoded)
-        percent = saved * 100 / len(s)
-        print("Result   : Compression BENEFICIAL - saved", saved,
-              "characters (" + str(round(percent, 1)) + "%)")
-    elif len(encoded) == len(s):
-        print("Result   : No change in size - encoding not beneficial, keep original")
-    else:
-        extra = len(encoded) - len(s)
-        print("Result   : Encoding made it", extra, "characters LONGER - not beneficial, keep original")
+day = 1                                  # next date to print
+for week in range(6):                    # a month needs at most 6 week-rows
+    if day > days:
+        break                            # all dates printed, stop early
+    line = ""
+    for column in range(1, 8):           # columns 1 (Mon) .. 7 (Sun)
+        if week == 0 and column < start:
+            line = line + "   "          # blank cell before the 1st
+        elif day > days:
+            line = line + "   "          # blank cell after the last date
+        else:
+            if day < 10:
+                line = line + " " + str(day) + " "    # width = 3 characters
+            else:
+                line = line + str(day) + " "
+            day = day + 1
+    print(line)
