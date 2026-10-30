@@ -1,16 +1,19 @@
-How many passwords to check? 
-Password 1: RESULT: VALID - password meets all rules
+Run-Length Encoder (press Enter on an empty line to quit)
 
-Password 2: RESULT: INVALID - 4 rule(s) failed
-  - No uppercase letter
-  - No digit
-  - No special character from !@#$%^&*
-  - Contains prohibited text 'password'
+Enter text: Original : aaabbbcccc (length 10 )
+Encoded  : a3b3c4 (length 6 )
+Result   : Compression BENEFICIAL - saved 4 characters (40.0%)
 
-Password 3: RESULT: INVALID - 1 rule(s) failed
-  - Character 'A' repeated 3+ times in a row
+Enter text: Original : abc (length 3 )
+Encoded  : a1b1c1 (length 6 )
+Result   : Encoding made it 3 characters LONGER - not beneficial, keep original
 
-Password 4: RESULT: INVALID - 1 rule(s) failed
-  - Too short: 4 characters (minimum 8)
+Enter text: Original : aabb (length 4 )
+Encoded  : a2b2 (length 4 )
+Result   : No change in size - encoding not beneficial, keep original
 
-Password 5: RESULT: VALID - password meets all rules
+Enter text: Original : WWWWWWWWWWWWBWWWW (length 17 )
+Encoded  : W12B1W4 (length 7 )
+Result   : Compression BENEFICIAL - saved 10 characters (58.8%)
+
+Enter text: Goodbye!

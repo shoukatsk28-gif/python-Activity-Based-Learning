@@ -1,65 +1,37 @@
 # ============================================================
-# Case Study 4: Password Policy Validation Engine
-# Uses: strings, loops, lists, conditions
+# Case Study 5: Text Compression Using Character Runs (RLE)
+# Uses: strings, while loops, nested loops, conditions
 # ============================================================
 
-MIN_LENGTH = 8
-SPECIALS = "!@#$%^&*"
-BANNED = ["password", "admin", "1234", "qwerty"]
+print("Run-Length Encoder (press Enter on an empty line to quit)")
 
 while True:
-    t = input("How many passwords to check? ").strip()
-    if t.isdigit() and int(t) > 0:
-        count = int(t)
+    s = input("\nEnter text: ")
+    if s == "":
+        print("Goodbye!")
         break
-    print("Enter a positive whole number.")
 
-for number in range(1, count + 1):
-    pw = input("\nPassword " + str(number) + ": ")
-    failures = []                       # list of explanation strings
+    encoded = ""
+    i = 0
+    while i < len(s):
+        ch = s[i]
+        run = 1
+        # count how many times this character repeats consecutively
+        while i + run < len(s) and s[i + run] == ch:
+            run = run + 1
+        encoded = encoded + ch + str(run)      # e.g. "aaa" -> "a3"
+        i = i + run                            # jump past the whole run
 
-    # Rule 1: length
-    if len(pw) < MIN_LENGTH:
-        failures.append("Too short: " + str(len(pw)) + " characters (minimum " + str(MIN_LENGTH) + ")")
+    print("Original :", s, "(length", len(s), ")")
+    print("Encoded  :", encoded, "(length", len(encoded), ")")
 
-    # Rule 2: character categories (checked with a loop over characters)
-    has_upper = False
-    has_lower = False
-    has_digit = False
-    has_special = False
-    for ch in pw:
-        if "A" <= ch <= "Z":
-            has_upper = True
-        elif "a" <= ch <= "z":
-            has_lower = True
-        elif "0" <= ch <= "9":
-            has_digit = True
-        elif ch in SPECIALS:
-            has_special = True
-    if not has_upper:
-        failures.append("No uppercase letter")
-    if not has_lower:
-        failures.append("No lowercase letter")
-    if not has_digit:
-        failures.append("No digit")
-    if not has_special:
-        failures.append("No special character from " + SPECIALS)
-
-    # Rule 3: no character repeated 3 times in a row
-    for i in range(len(pw) - 2):
-        if pw[i] == pw[i + 1] and pw[i + 1] == pw[i + 2]:
-            failures.append("Character '" + pw[i] + "' repeated 3+ times in a row")
-            break
-
-    # Rule 4: prohibited substrings (case-insensitive)
-    low = pw.lower()
-    for word in BANNED:
-        if word in low:
-            failures.append("Contains prohibited text '" + word + "'")
-
-    if len(failures) == 0:
-        print("RESULT: VALID - password meets all rules")
+    if len(encoded) < len(s):
+        saved = len(s) - len(encoded)
+        percent = saved * 100 / len(s)
+        print("Result   : Compression BENEFICIAL - saved", saved,
+              "characters (" + str(round(percent, 1)) + "%)")
+    elif len(encoded) == len(s):
+        print("Result   : No change in size - encoding not beneficial, keep original")
     else:
-        print("RESULT: INVALID -", len(failures), "rule(s) failed")
-        for f in failures:
-            print("  -", f)
+        extra = len(encoded) - len(s)
+        print("Result   : Encoding made it", extra, "characters LONGER - not beneficial, keep original")

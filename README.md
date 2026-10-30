@@ -1,76 +1,73 @@
-# Case Study 4: Password Policy Validation Engine
-*(Original list number: 29)*
+# Case Study 5: Text Compression Using Character Runs
+*(Original list number: 35)*
 
 ## 1. Problem Statement
-Check a number of password strings against a policy: minimum length, required character categories, no repeated characters and no prohibited substrings. For each password, explain every rule that failed.
+Encode a string by replacing every group of consecutive repeated characters with the character followed by its count (for example aaabb becomes a3b2). Compare the original and encoded lengths and decide whether encoding is beneficial.
 
 ## 2. Objectives
-- Scan strings character by character using loops.
-- Check character categories without library functions.
-- Detect three identical characters in a row and banned substrings.
-- Collect all failures in a list and display them clearly.
+- Group consecutive repeated characters using nested while loops.
+- Build a new string by concatenation.
+- Compare lengths and compute the saving percentage.
+- Handle cases where encoding is longer or equal.
 
 ## 3. Assumptions
-- Minimum length = 8.
-- Need at least one uppercase, lowercase, digit and special character from !@#$%^&*.
-- No character may appear 3 or more times consecutively.
-- Prohibited words (case-insensitive): password, admin, 1234, qwerty.
-- The user decides how many passwords to check.
+- Input is plain text (letters, spaces or symbols).
+- Format used is character followed by count, e.g. W12B1W4.
+- An empty line ends the program.
+- Decoding is not required.
 
 ## 4. Algorithm
-1. Start; read how many passwords to test (positive whole number).
-2. For each password, create an empty failures list.
-3. If length < 8, add a failure.
-4. Loop through characters and set flags for uppercase, lowercase, digit, special.
-5. Add a failure for every missing category.
-6. Compare each character with the next two; if all equal, add a failure and stop checking.
-7. Convert to lowercase; for each banned word, if it is inside the password add a failure.
-8. If failures list is empty print VALID, else print each failure.
-9. Stop after the last password.
+1. Start; read a line of text; stop if it is empty.
+2. Set i = 0 and encoded = empty string.
+3. While i < length: take ch = s[i], set run = 1.
+4. While the next character equals ch, increase run.
+5. Append ch and run to encoded; add run to i.
+6. Print both lengths.
+7. If encoded is shorter, print saving and percentage; if equal or longer, say not beneficial.
+8. Return to reading the next text.
 
 ## 5. Pseudocode
 ```text
 START
-  READ count (positive integer)
-  FOR number FROM 1 TO count
-      READ pw
-      failures <- empty list
-      IF length(pw) < 8 THEN add "too short"
-      has_upper, has_lower, has_digit, has_special <- FALSE
-      FOR each ch IN pw
-          IF ch is A-Z THEN has_upper <- TRUE
-          ELSE IF ch is a-z THEN has_lower <- TRUE
-          ELSE IF ch is 0-9 THEN has_digit <- TRUE
-          ELSE IF ch IN specials THEN has_special <- TRUE
-      add a failure for each flag still FALSE
-      FOR i FROM 0 TO length-3
-          IF pw[i] = pw[i+1] = pw[i+2] THEN add failure; BREAK
-      low <- lowercase(pw)
-      FOR each word IN banned
-          IF word inside low THEN add failure
-      IF failures empty THEN PRINT VALID
-      ELSE PRINT INVALID and every failure
-  ENDFOR
+  LOOP
+      READ s
+      IF s is empty THEN EXIT LOOP
+      encoded <- ""; i <- 0
+      WHILE i < length(s)
+          ch <- s[i]; run <- 1
+          WHILE i + run < length(s) AND s[i+run] = ch
+              run <- run + 1
+          encoded <- encoded + ch + string(run)
+          i <- i + run
+      ENDWHILE
+      PRINT s, encoded, lengths
+      IF length(encoded) < length(s) THEN
+          PRINT saving and percentage
+      ELSE
+          PRINT "not beneficial, keep original"
+  ENDLOOP
 END
 ```
 
 ## 6. Flowchart
 ```mermaid
 flowchart TD
-    A([Start]) --> B[Read number of passwords]
-    B --> C[Read next password]
-    C --> D[failures = empty list]
-    D --> E[Check length]
-    E --> F[Scan characters: upper, lower, digit, special]
-    F --> G[Check 3 repeated characters in a row]
-    G --> H[Check banned words in lowercase copy]
-    H --> I{failures empty?}
-    I -- Yes --> J[Print VALID]
-    I -- No --> K[Print INVALID and list reasons]
-    J --> L{More passwords?}
-    K --> L
-    L -- Yes --> C
-    L -- No --> M([Stop])
+    A([Start]) --> B[Read text]
+    B --> C{Empty?}
+    C -- Yes --> Z([Stop])
+    C -- No --> D[i = 0, encoded = empty]
+    D --> E{i < length?}
+    E -- Yes --> F[ch = s at i, run = 1]
+    F --> G{Next char equals ch?}
+    G -- Yes --> H[run = run + 1] --> G
+    G -- No --> I[Append ch and run, i = i + run]
+    I --> E
+    E -- No --> J[Compare lengths]
+    J --> K{Encoded shorter?}
+    K -- Yes --> L[Print saving and percent]
+    K -- No --> M[Print not beneficial]
+    L --> B
+    M --> B
 ```
 
 ## 7. Python Source Code
@@ -78,80 +75,52 @@ The full program is in [`program.py`](program.py).
 
 ```python
 # ============================================================
-# Case Study 4: Password Policy Validation Engine
-# Uses: strings, loops, lists, conditions
+# Case Study 5: Text Compression Using Character Runs (RLE)
+# Uses: strings, while loops, nested loops, conditions
 # ============================================================
 
-MIN_LENGTH = 8
-SPECIALS = "!@#$%^&*"
-BANNED = ["password", "admin", "1234", "qwerty"]
+print("Run-Length Encoder (press Enter on an empty line to quit)")
 
 while True:
-    t = input("How many passwords to check? ").strip()
-    if t.isdigit() and int(t) > 0:
-        count = int(t)
+    s = input("\nEnter text: ")
+    if s == "":
+        print("Goodbye!")
         break
-    print("Enter a positive whole number.")
 
-for number in range(1, count + 1):
-    pw = input("\nPassword " + str(number) + ": ")
-    failures = []                       # list of explanation strings
+    encoded = ""
+    i = 0
+    while i < len(s):
+        ch = s[i]
+        run = 1
+        # count how many times this character repeats consecutively
+        while i + run < len(s) and s[i + run] == ch:
+            run = run + 1
+        encoded = encoded + ch + str(run)      # e.g. "aaa" -> "a3"
+        i = i + run                            # jump past the whole run
 
-    # Rule 1: length
-    if len(pw) < MIN_LENGTH:
-        failures.append("Too short: " + str(len(pw)) + " characters (minimum " + str(MIN_LENGTH) + ")")
+    print("Original :", s, "(length", len(s), ")")
+    print("Encoded  :", encoded, "(length", len(encoded), ")")
 
-    # Rule 2: character categories (checked with a loop over characters)
-    has_upper = False
-    has_lower = False
-    has_digit = False
-    has_special = False
-    for ch in pw:
-        if "A" <= ch <= "Z":
-            has_upper = True
-        elif "a" <= ch <= "z":
-            has_lower = True
-        elif "0" <= ch <= "9":
-            has_digit = True
-        elif ch in SPECIALS:
-            has_special = True
-    if not has_upper:
-        failures.append("No uppercase letter")
-    if not has_lower:
-        failures.append("No lowercase letter")
-    if not has_digit:
-        failures.append("No digit")
-    if not has_special:
-        failures.append("No special character from " + SPECIALS)
-
-    # Rule 3: no character repeated 3 times in a row
-    for i in range(len(pw) - 2):
-        if pw[i] == pw[i + 1] and pw[i + 1] == pw[i + 2]:
-            failures.append("Character '" + pw[i] + "' repeated 3+ times in a row")
-            break
-
-    # Rule 4: prohibited substrings (case-insensitive)
-    low = pw.lower()
-    for word in BANNED:
-        if word in low:
-            failures.append("Contains prohibited text '" + word + "'")
-
-    if len(failures) == 0:
-        print("RESULT: VALID - password meets all rules")
+    if len(encoded) < len(s):
+        saved = len(s) - len(encoded)
+        percent = saved * 100 / len(s)
+        print("Result   : Compression BENEFICIAL - saved", saved,
+              "characters (" + str(round(percent, 1)) + "%)")
+    elif len(encoded) == len(s):
+        print("Result   : No change in size - encoding not beneficial, keep original")
     else:
-        print("RESULT: INVALID -", len(failures), "rule(s) failed")
-        for f in failures:
-            print("  -", f)
+        extra = len(encoded) - len(s)
+        print("Result   : Encoding made it", extra, "characters LONGER - not beneficial, keep original")
 ```
 
 ## 8. Test Cases
 | No. | Test Case | Input | Expected Output |
 |-----|-----------|-------|-----------------|
-| 1 | Valid | Hello@123 | VALID |
-| 2 | Banned word, missing categories | password | INVALID - 4 rules: no uppercase, no digit, no special, contains 'password' |
-| 3 | Repeated characters | AAAbc1!x | INVALID - 'A' repeated 3+ times |
-| 4 | Too short | Ab1! | INVALID - too short: 4 characters |
-| 5 | Strong password | Secure#Pass9 | VALID |
+| 1 | Beneficial | aaabbbcccc | a3b3c4 (6 vs 10), saved 4 characters (40.0%) |
+| 2 | Longer result | abc | a1b1c1 (6 vs 3), encoding made it 3 characters longer |
+| 3 | Equal length | aabb | a2b2 (4 vs 4), no change, not beneficial |
+| 4 | Classic example | WWWWWWWWWWWWBWWWW | W12B1W4 (7 vs 17), saved 10 characters (58.8%) |
+| 5 | Quit | (empty line) | Goodbye! |
 
 ## 9. Output Screenshot
 Run `python program.py`, take a screenshot of the terminal and save it as `screenshots/output.png`.
@@ -161,23 +130,26 @@ Run `python program.py`, take a screenshot of the terminal and save it as `scree
 Text copy of the output: [`sample_output.txt`](sample_output.txt)
 
 ```text
-How many passwords to check? 
-Password 1: RESULT: VALID - password meets all rules
+Run-Length Encoder (press Enter on an empty line to quit)
 
-Password 2: RESULT: INVALID - 4 rule(s) failed
-  - No uppercase letter
-  - No digit
-  - No special character from !@#$%^&*
-  - Contains prohibited text 'password'
+Enter text: Original : aaabbbcccc (length 10 )
+Encoded  : a3b3c4 (length 6 )
+Result   : Compression BENEFICIAL - saved 4 characters (40.0%)
 
-Password 3: RESULT: INVALID - 1 rule(s) failed
-  - Character 'A' repeated 3+ times in a row
+Enter text: Original : abc (length 3 )
+Encoded  : a1b1c1 (length 6 )
+Result   : Encoding made it 3 characters LONGER - not beneficial, keep original
 
-Password 4: RESULT: INVALID - 1 rule(s) failed
-  - Too short: 4 characters (minimum 8)
+Enter text: Original : aabb (length 4 )
+Encoded  : a2b2 (length 4 )
+Result   : No change in size - encoding not beneficial, keep original
 
-Password 5: RESULT: VALID - password meets all rules
+Enter text: Original : WWWWWWWWWWWWBWWWW (length 17 )
+Encoded  : W12B1W4 (length 7 )
+Result   : Compression BENEFICIAL - saved 10 characters (58.8%)
+
+Enter text: Goodbye!
 ```
 
 ## 10. Conclusion
-The validator reports every failed rule instead of stopping at the first one, which gives useful feedback. It uses only loops, comparisons, lists and strings, matching the syllabus.
+The program implements run-length encoding with nested loops and reports honestly when compression does not help. It shows how careful loop control (jumping the index by the run length) avoids double counting.
