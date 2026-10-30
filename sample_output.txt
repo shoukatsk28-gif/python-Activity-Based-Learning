@@ -1,11 +1,31 @@
-=== VALIDATION ===
-INVALID shift: ('E04', 'Wed', 14, 10)
-INVALID shift: ('E05', 'Thu', 6, 26)
-Valid shifts: 8 | Invalid shifts: 2
+Opening balance: 10000
+No  Type Amount  Status    Balance
+1   D    5000    OK        15000
+2   W    2000    OK        13000
+3   W    2000    OK        11000
+4   W    2000    OK        9000
+5   W    6000    REJECTED  9000
+6   T    3000    OK        6000
+7   D    -200    REJECTED  6000
+8   W    5000    REJECTED  6000
+9   W    4000    OK        2000
+10  T    1600    REJECTED  2000
+11  X    100     REJECTED  2000
+12  T    500     REJECTED  2000
+13  D    300     OK        2300
+14  D    300     OK        2600
+15  D    300     OK        2900
 
-=== CONFLICTS ===
-E01 Mon : (9, 17) overlaps (16, 20) -> 1 hour(s)
-E02 Mon : (9, 13) overlaps (12, 18) -> 1 hour(s)
-
-Total conflicts: 2
-Employees with conflicting schedules: E01, E02
+===== AUDIT SUMMARY =====
+Transactions processed : 15
+Accepted               : 9
+Rejected               : 6
+   #5 - exceeds per-withdrawal limit
+   #7 - amount must be positive
+   #8 - exceeds daily withdrawal limit
+   #10 - minimum balance would be broken
+   #11 - unknown transaction type
+   #12 - missing target account
+Suspicious patterns at : [4, 15]
+Total withdrawn today  : 10000
+Final balance          : 2900

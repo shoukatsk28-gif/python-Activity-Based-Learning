@@ -1,76 +1,76 @@
-# Case Study 8: Tuple-Based Employee Shift Conflict Detection
-*(Original list number: 48)*
+# Case Study 9: Multi-Stage ATM Transaction Audit
+*(Original list number: 86)*
 
 ## 1. Problem Statement
-Employee shifts are stored as tuples (employee, day, start hour, end hour). Detect invalid shifts, compare time intervals of the same employee on the same day, report overlaps with their duration and list the employees who have conflicting schedules.
+Process a sequence of deposits, withdrawals and transfers on a simulated account. Maintain the balance, reject invalid operations with reasons, enforce limits and detect suspicious repeated patterns. Finish with an audit summary.
 
 ## 2. Objectives
-- Store records as tuples and unpack them in loops.
-- Validate time intervals.
-- Apply the interval overlap rule: start1 < end2 and start2 < end1.
-- Compare all pairs using nested loops.
-- Report overlap duration and unique employee list.
+- Process a list of transaction tuples with unpacking.
+- Validate each transaction against several rules in the right order.
+- Maintain a running balance and daily withdrawal total.
+- Detect the same transaction repeated three times in a row.
+- Produce a clear audit summary.
 
 ## 3. Assumptions
-- Times are whole hours in 24-hour format (0 to 24).
-- A shift must end after it starts (no overnight shifts).
-- Shifts that only touch (one ends exactly when the next starts) are NOT conflicts.
-- Only shifts of the same employee on the same day are compared.
+- Opening balance = Rs.10,000; minimum balance to maintain = Rs.500.
+- Per-withdrawal limit = Rs.5,000; daily withdrawal limit = Rs.10,000; transfer limit = Rs.20,000.
+- Types: D = deposit, W = withdrawal, T = transfer (needs a target account).
+- Suspicious = same type and amount three times consecutively (rejected attempts also count).
+- All transactions happen on the same day.
 
 ## 4. Algorithm
-1. Start; create the list of shift tuples.
-2. Unpack each tuple; if start < 0 or end > 24 or start >= end, report it as invalid; else add to valid list.
-3. For i over valid shifts, for j after i, unpack both tuples.
-4. If employee and day are equal and start1 < end2 and start2 < end1, there is a conflict.
-5. Overlap hours = earliest end - latest start.
-6. Print the conflict and add the employee to the conflict list if not already there.
-7. Print total conflicts and the employee list; stop.
+1. Start; set balance and limits; create transaction tuples.
+2. For each transaction, unpack type, amount and target.
+3. Validate: type must be D/W/T; amount > 0; for W check per-transaction limit, daily limit and minimum balance; for T check target, transfer limit and minimum balance.
+4. If no reason to reject, update balance (and daily withdrawals for W) and count as accepted; else store (number, reason).
+5. Update the repeat counter using the (type, amount) pair; at 3 in a row record the transaction as suspicious.
+6. Print one line for each transaction.
+7. Print the summary: counts, rejection reasons, suspicious positions, withdrawn total, final balance.
 
 ## 5. Pseudocode
 ```text
 START
-  shifts <- list of tuples (emp, day, start, end)
-  valid <- empty list
-  FOR each shift IN shifts
-      UNPACK shift INTO emp, day, start, end
-      IF start < 0 OR end > 24 OR start >= end THEN PRINT invalid
-      ELSE append shift to valid
-  conflicts <- 0; conflict_employees <- empty list
-  FOR i FROM 0 TO length(valid) - 1
-      FOR j FROM i+1 TO length(valid) - 1
-          UNPACK valid[i] INTO e1, d1, s1, f1
-          UNPACK valid[j] INTO e2, d2, s2, f2
-          IF e1 = e2 AND d1 = d2 AND s1 < f2 AND s2 < f1 THEN
-              overlap <- MIN(f1,f2) - MAX(s1,s2)
-              PRINT conflict
-              conflicts <- conflicts + 1
-              IF e1 not in conflict_employees THEN append e1
-  PRINT totals and employee list
+  balance <- 10000; withdrawn_today <- 0
+  rejected <- empty list; suspicious <- empty list
+  last_key <- ("", 0); run <- 0
+  FOR each transaction t IN transactions
+      UNPACK t INTO kind, amount, target
+      reason <- ""
+      IF kind not in D,W,T THEN reason <- "unknown type"
+      ELSE IF amount <= 0 THEN reason <- "invalid amount"
+      ELSE IF kind = W THEN
+           check per-withdrawal limit, daily limit, minimum balance
+      ELSE IF kind = T THEN
+           check target present, transfer limit, minimum balance
+      IF reason = "" THEN
+           update balance (and withdrawn_today for W)
+      ELSE append (number, reason) to rejected
+      IF (kind, amount) = last_key THEN run <- run + 1
+      ELSE run <- 1; last_key <- (kind, amount)
+      IF run = 3 THEN append number to suspicious
+      PRINT status line
+  PRINT audit summary
 END
 ```
 
 ## 6. Flowchart
 ```mermaid
 flowchart TD
-    A([Start]) --> B[Create shift tuples]
-    B --> C[Take next shift and unpack]
-    C --> D{Valid interval?}
-    D -- No --> E[Print invalid]
-    D -- Yes --> F[Add to valid list]
-    E --> G{More shifts?}
+    A([Start]) --> B[Set balance, limits, transaction list]
+    B --> C[Take next transaction, unpack]
+    C --> D{Rule violated?}
+    D -- No --> E[Update balance and daily total]
+    D -- Yes --> F[Record rejection reason]
+    E --> G[Update repeat counter]
     F --> G
-    G -- Yes --> C
-    G -- No --> H[Compare every pair i, j]
-    H --> I{Same employee and day?}
-    I -- No --> N[Next pair]
-    I -- Yes --> J{s1 < f2 and s2 < f1?}
-    J -- No --> N
-    J -- Yes --> K[Print overlap, add employee]
-    K --> N
-    N --> O{More pairs?}
-    O -- Yes --> H
-    O -- No --> P[Print summary]
-    P --> Q([Stop])
+    G --> H{Same transaction 3 times in a row?}
+    H -- Yes --> I[Mark as suspicious]
+    H -- No --> J[Print status line]
+    I --> J
+    J --> K{More transactions?}
+    K -- Yes --> C
+    K -- No --> L[Print audit summary]
+    L --> M([Stop])
 ```
 
 ## 7. Python Source Code
@@ -78,74 +78,121 @@ The full program is in [`program.py`](program.py).
 
 ```python
 # ============================================================
-# Case Study 8: Tuple-Based Employee Shift Conflict Detection
-# Uses: tuples, tuple unpacking, lists, nested loops
+# Case Study 9: Multi-Stage ATM Transaction Audit
+# Uses: tuples, unpacking, lists, loops, conditions
 # ============================================================
 
-# Each shift is a tuple: (employee, day, start_hour, end_hour) in 24-hour time
-shifts = [
-    ("E01", "Mon", 9, 17),
-    ("E02", "Mon", 9, 13),
-    ("E01", "Mon", 16, 20),     # overlaps with E01's first shift
-    ("E03", "Tue", 8, 16),
-    ("E02", "Mon", 12, 18),     # overlaps with E02's first shift
-    ("E03", "Tue", 16, 22),     # touches (not overlaps) E03's first shift
-    ("E04", "Wed", 14, 10),     # invalid: ends before it starts
-    ("E01", "Tue", 9, 17),
-    ("E01", "Tue", 17, 23),     # back-to-back, no conflict
-    ("E05", "Thu", 6, 26),      # invalid: hour above 24
+OPENING_BALANCE = 10000
+MIN_BALANCE = 500            # balance must never fall below this
+PER_WITHDRAWAL_LIMIT = 5000
+DAILY_WITHDRAWAL_LIMIT = 10000
+TRANSFER_LIMIT = 20000
+
+# (type, amount, target account)   D = deposit, W = withdraw, T = transfer
+transactions = [
+    ("D", 5000, ""),
+    ("W", 2000, ""),
+    ("W", 2000, ""),
+    ("W", 2000, ""),          # 3rd identical withdrawal in a row -> suspicious
+    ("W", 6000, ""),          # above per-withdrawal limit
+    ("T", 3000, "ACC205"),
+    ("D", -200, ""),          # invalid amount
+    ("W", 5000, ""),          # would exceed daily limit
+    ("W", 4000, ""),
+    ("T", 1600, "ACC310"),    # would break minimum balance
+    ("X", 100, ""),           # unknown type
+    ("T", 500, ""),           # missing target account
+    ("D", 300, ""),
+    ("D", 300, ""),
+    ("D", 300, ""),           # 3 identical deposits -> suspicious
 ]
 
-# ---- Step 1: separate valid and invalid shifts ----
-valid_shifts = []
-print("=== VALIDATION ===")
-for shift in shifts:
-    emp, day, start, end = shift                  # unpacking
-    if start < 0 or end > 24 or start >= end:
-        print("INVALID shift:", shift)
+balance = OPENING_BALANCE
+withdrawn_today = 0
+accepted = 0
+rejected = []                # list of (number, reason) tuples
+suspicious = []              # list of transaction numbers
+last_key = ("", 0)           # previous (type, amount)
+run_length = 0               # how many times in a row the same transaction appeared
+
+print("Opening balance:", balance)
+print("No  Type Amount  Status    Balance")
+
+number = 0
+for t in transactions:
+    number = number + 1
+    kind, amount, target = t               # tuple unpacking
+    reason = ""
+
+    # ---- validation ----
+    if kind != "D" and kind != "W" and kind != "T":
+        reason = "unknown transaction type"
+    elif amount <= 0:
+        reason = "amount must be positive"
+    elif kind == "W":
+        if amount > PER_WITHDRAWAL_LIMIT:
+            reason = "exceeds per-withdrawal limit"
+        elif withdrawn_today + amount > DAILY_WITHDRAWAL_LIMIT:
+            reason = "exceeds daily withdrawal limit"
+        elif balance - amount < MIN_BALANCE:
+            reason = "minimum balance would be broken"
+    elif kind == "T":
+        if target == "":
+            reason = "missing target account"
+        elif amount > TRANSFER_LIMIT:
+            reason = "exceeds transfer limit"
+        elif balance - amount < MIN_BALANCE:
+            reason = "minimum balance would be broken"
+
+    # ---- apply the transaction ----
+    if reason == "":
+        if kind == "D":
+            balance = balance + amount
+        elif kind == "W":
+            balance = balance - amount
+            withdrawn_today = withdrawn_today + amount
+        else:
+            balance = balance - amount
+        accepted = accepted + 1
+        status = "OK"
     else:
-        valid_shifts.append(shift)
-print("Valid shifts:", len(valid_shifts), "| Invalid shifts:", len(shifts) - len(valid_shifts))
+        rejected.append((number, reason))
+        status = "REJECTED"
 
-# ---- Step 2: compare every pair of valid shifts ----
-print("\n=== CONFLICTS ===")
-conflict_employees = []
-conflict_count = 0
-for i in range(len(valid_shifts)):
-    for j in range(i + 1, len(valid_shifts)):
-        e1, d1, s1, f1 = valid_shifts[i]
-        e2, d2, s2, f2 = valid_shifts[j]
-        if e1 == e2 and d1 == d2:                 # same employee, same day
-            if s1 < f2 and s2 < f1:               # interval overlap test
-                latest_start = s1
-                if s2 > s1:
-                    latest_start = s2
-                earliest_end = f1
-                if f2 < f1:
-                    earliest_end = f2
-                overlap = earliest_end - latest_start
-                print(e1, d1, ":", (s1, f1), "overlaps", (s2, f2), "->", overlap, "hour(s)")
-                conflict_count = conflict_count + 1
-                if e1 not in conflict_employees:
-                    conflict_employees.append(e1)
+    # ---- suspicious repeated pattern (same type+amount 3 times in a row) ----
+    if (kind, amount) == last_key:
+        run_length = run_length + 1
+    else:
+        run_length = 1
+        last_key = (kind, amount)
+    if run_length == 3:
+        suspicious.append(number)
 
-if conflict_count == 0:
-    print("No conflicts found.")
-else:
-    print("\nTotal conflicts:", conflict_count)
-    print("Employees with conflicting schedules:", ", ".join(conflict_employees))
+    print(str(number).ljust(3), kind.ljust(4), str(amount).ljust(7), status.ljust(9), balance)
+
+# ---- audit summary ----
+print("\n===== AUDIT SUMMARY =====")
+print("Transactions processed :", len(transactions))
+print("Accepted               :", accepted)
+print("Rejected               :", len(rejected))
+for num, why in rejected:
+    print("   #" + str(num), "-", why)
+print("Suspicious patterns at :", suspicious if len(suspicious) > 0 else "none")
+print("Total withdrawn today  :", withdrawn_today)
+print("Final balance          :", balance)
 ```
 
 ## 8. Test Cases
 | No. | Test Case | Input | Expected Output |
 |-----|-----------|-------|-----------------|
-| 1 | Overlapping shifts | E01 Mon (9,17) and (16,20) | Conflict, overlap 1 hour |
-| 2 | Overlapping shifts | E02 Mon (9,13) and (12,18) | Conflict, overlap 1 hour |
-| 3 | Touching shifts | E03 Tue (8,16) and (16,22) | No conflict |
-| 4 | Back-to-back shifts | E01 Tue (9,17) and (17,23) | No conflict |
-| 5 | End before start | E04 Wed (14,10) | INVALID shift |
-| 6 | Hour above 24 | E05 Thu (6,26) | INVALID shift |
-| 7 | Summary | All data | Valid 8, invalid 2, conflicts 2, employees E01 and E02 |
+| 1 | Over per-withdrawal limit | W 6000 | Rejected: exceeds per-withdrawal limit |
+| 2 | Negative deposit | D -200 | Rejected: amount must be positive |
+| 3 | Daily limit | W 5000 after 6000 withdrawn | Rejected: exceeds daily withdrawal limit |
+| 4 | Minimum balance | T 1600 with balance 2000 | Rejected: minimum balance would be broken |
+| 5 | Unknown type | X 100 | Rejected: unknown transaction type |
+| 6 | Missing target | T 500 with no account | Rejected: missing target account |
+| 7 | Repeated pattern | W 2000 three times; D 300 three times | Suspicious at #4 and #15 |
+| 8 | Final result | Whole list | Accepted 9, rejected 6, withdrawn 10000, final balance 2900 |
 
 ## 9. Output Screenshot
 Run `python program.py`, take a screenshot of the terminal and save it as `screenshots/output.png`.
@@ -155,18 +202,38 @@ Run `python program.py`, take a screenshot of the terminal and save it as `scree
 Text copy of the output: [`sample_output.txt`](sample_output.txt)
 
 ```text
-=== VALIDATION ===
-INVALID shift: ('E04', 'Wed', 14, 10)
-INVALID shift: ('E05', 'Thu', 6, 26)
-Valid shifts: 8 | Invalid shifts: 2
+Opening balance: 10000
+No  Type Amount  Status    Balance
+1   D    5000    OK        15000
+2   W    2000    OK        13000
+3   W    2000    OK        11000
+4   W    2000    OK        9000
+5   W    6000    REJECTED  9000
+6   T    3000    OK        6000
+7   D    -200    REJECTED  6000
+8   W    5000    REJECTED  6000
+9   W    4000    OK        2000
+10  T    1600    REJECTED  2000
+11  X    100     REJECTED  2000
+12  T    500     REJECTED  2000
+13  D    300     OK        2300
+14  D    300     OK        2600
+15  D    300     OK        2900
 
-=== CONFLICTS ===
-E01 Mon : (9, 17) overlaps (16, 20) -> 1 hour(s)
-E02 Mon : (9, 13) overlaps (12, 18) -> 1 hour(s)
-
-Total conflicts: 2
-Employees with conflicting schedules: E01, E02
+===== AUDIT SUMMARY =====
+Transactions processed : 15
+Accepted               : 9
+Rejected               : 6
+   #5 - exceeds per-withdrawal limit
+   #7 - amount must be positive
+   #8 - exceeds daily withdrawal limit
+   #10 - minimum balance would be broken
+   #11 - unknown transaction type
+   #12 - missing target account
+Suspicious patterns at : [4, 15]
+Total withdrawn today  : 10000
+Final balance          : 2900
 ```
 
 ## 10. Conclusion
-Tuples are a natural fit for fixed records, and unpacking made the comparison code readable. The overlap rule treats back-to-back shifts correctly, and the program clearly separates invalid data from real scheduling conflicts.
+The audit program applies layered validation rules in a clear order, keeps the account consistent, and flags suspicious repetition. It shows how tuples, lists, unpacking and conditions combine in a banking simulation.
