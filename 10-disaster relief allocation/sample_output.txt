@@ -1,0 +1,23 @@
+PRIORITY ORDER:
+  1 Coastal Town (urgency 1, population 2000)
+  2 Riverside (urgency 1, population 1200)
+  3 Hilltop (urgency 2, population 800)
+  4 Old Market (urgency 3, population 500)
+
+ALLOCATION (given / demanded):
+Coastal Town Food kits 400/400  Water cans 300/300  Medicine kits 100/100  
+Riverside    Food kits 100/300  Water cans 100/250  Medicine kits 100/120  
+Hilltop      Food kits 0/200  Water cans 0/150  Medicine kits 0/60  
+Old Market   Food kits 0/150  Water cans 0/100  Medicine kits 0/40  
+
+UNMET DEMAND BY AREA:
+  Coastal Town - fully served
+  Riverside - Food kits: 200, Water cans: 150, Medicine kits: 20
+  Hilltop - Food kits: 200, Water cans: 150, Medicine kits: 60
+  Old Market - Food kits: 150, Water cans: 100, Medicine kits: 40
+
+REMAINING STOCK:
+  Food kits = 0
+  Water cans = 0
+  Medicine kits = 0
+Total unmet units: 1070
