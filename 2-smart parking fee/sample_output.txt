@@ -1,0 +1,49 @@
+
+--- New Parking Ticket ---
+Vehicle type (BIKE/CAR/TRUCK): Enter entry time (HH:MM, 24-hour): Enter exit time (HH:MM, 24-hour): Midnights crossed (0 = same date, 1 = exit next day...): 
+----- PARKING BILL -----
+Vehicle        : CAR
+Duration       : 1 h 40 min
+Parking charge : Rs. 40
+Overnight fee  : Rs. 0
+Penalty        : Rs. 0
+TOTAL          : Rs. 40
+
+Another ticket? (y/n): 
+--- New Parking Ticket ---
+Vehicle type (BIKE/CAR/TRUCK): Enter entry time (HH:MM, 24-hour): Enter exit time (HH:MM, 24-hour): Midnights crossed (0 = same date, 1 = exit next day...): 
+----- PARKING BILL -----
+Vehicle        : BIKE
+Duration       : 10 h 0 min
+Parking charge : Rs. 80
+Overnight fee  : Rs. 0
+Penalty        : Rs. 0
+TOTAL          : Rs. 80
+
+Another ticket? (y/n): 
+--- New Parking Ticket ---
+Vehicle type (BIKE/CAR/TRUCK): Enter entry time (HH:MM, 24-hour): Enter exit time (HH:MM, 24-hour): Midnights crossed (0 = same date, 1 = exit next day...): 
+----- PARKING BILL -----
+Vehicle        : TRUCK
+Duration       : 8 h 30 min
+Parking charge : Rs. 300
+Overnight fee  : Rs. 50
+Penalty        : Rs. 0
+TOTAL          : Rs. 350
+
+Another ticket? (y/n): 
+--- New Parking Ticket ---
+Vehicle type (BIKE/CAR/TRUCK): Enter entry time (HH:MM, 24-hour): Enter exit time (HH:MM, 24-hour): Midnights crossed (0 = same date, 1 = exit next day...): 
+----- PARKING BILL -----
+Vehicle        : CAR
+Duration       : 73 h 0 min
+Parking charge : Rs. 470
+Overnight fee  : Rs. 150
+Penalty        : Rs. 200
+TOTAL          : Rs. 820
+
+Another ticket? (y/n): 
+--- New Parking Ticket ---
+Vehicle type (BIKE/CAR/TRUCK): Enter entry time (HH:MM, 24-hour): ERROR: hour must be 0-23 and minute 0-59.
+
+Another ticket? (y/n): Thank you!
