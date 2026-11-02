@@ -1,0 +1,19 @@
+Run-Length Encoder (press Enter on an empty line to quit)
+
+Enter text: Original : aaabbbcccc (length 10 )
+Encoded  : a3b3c4 (length 6 )
+Result   : Compression BENEFICIAL - saved 4 characters (40.0%)
+
+Enter text: Original : abc (length 3 )
+Encoded  : a1b1c1 (length 6 )
+Result   : Encoding made it 3 characters LONGER - not beneficial, keep original
+
+Enter text: Original : aabb (length 4 )
+Encoded  : a2b2 (length 4 )
+Result   : No change in size - encoding not beneficial, keep original
+
+Enter text: Original : WWWWWWWWWWWWBWWWW (length 17 )
+Encoded  : W12B1W4 (length 7 )
+Result   : Compression BENEFICIAL - saved 10 characters (58.8%)
+
+Enter text: Goodbye!
