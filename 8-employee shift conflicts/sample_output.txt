@@ -1,0 +1,11 @@
+=== VALIDATION ===
+INVALID shift: ('E04', 'Wed', 14, 10)
+INVALID shift: ('E05', 'Thu', 6, 26)
+Valid shifts: 8 | Invalid shifts: 2
+
+=== CONFLICTS ===
+E01 Mon : (9, 17) overlaps (16, 20) -> 1 hour(s)
+E02 Mon : (9, 13) overlaps (12, 18) -> 1 hour(s)
+
+Total conflicts: 2
+Employees with conflicting schedules: E01, E02
